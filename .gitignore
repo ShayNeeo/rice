@@ -1,0 +1,33 @@
+# Private / local instructions (do not publish)
+instructions/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Backups
+*.bak
+*.backup
+.config_backup_*
+
+# Editor / IDE
+.idea/
+.vscode/
+*.sublime-*
+
+# Logs and temp
+*.log
+*.tmp
+.cache/
+
+# Local overrides (if you keep any in repo by mistake)
+.env
+.env.local
+*.local
+
+# Build / AUR (if you ever add PKGBUILD or build dirs)
+src/
+pkg/
+*.pkg.tar*

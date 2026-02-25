@@ -1,0 +1,311 @@
+/* Ocean Sorbet GTK Theme for Thunar */
+/* Pixel-Perfect Modern Design */
+
+/* Root Colors */
+* {
+    outline-style: none;
+    outline-width: 0;
+    -gtk-outline-radius: 0;
+}
+
+/* Window Background */
+window {
+    background-color: #2D2D2D;
+    color: #F2E9E9;
+    font-family: "Terminus", monospace;
+}
+
+/* Thunar Specific */
+.thunar {
+    background-color: #2D2D2D;
+    color: #F2E9E9;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: #3A3A3A;
+    color: #F2E9E9;
+    border-right: 2px solid #46658C;
+}
+
+.sidebar row {
+    background-color: transparent;
+    color: #F2E9E9;
+    border-radius: 0;
+    padding: 4px 8px;
+    margin: 2px;
+}
+
+.sidebar row:hover {
+    background-color: #4A4A4A;
+}
+
+.sidebar row:selected {
+    background-color: #46658C;
+    color: #F2E9E9;
+    font-weight: bold;
+}
+
+/* Toolbar */
+toolbar, headerbar {
+    background-color: #3A3A3A;
+    border-bottom: 2px solid #46658C;
+    color: #F2E9E9;
+    border-radius: 0;
+    padding: 4px;
+    min-height: 36px;
+}
+
+toolbar button, headerbar button {
+    background-color: #4A4A4A;
+    color: #F2E9E9;
+    border: 1px solid #46658C;
+    border-radius: 0;
+    padding: 4px 8px;
+    margin: 2px;
+    min-height: 24px;
+}
+
+toolbar button:hover, headerbar button:hover {
+    background-color: #46658C;
+    color: #F2E9E9;
+}
+
+toolbar button:active, headerbar button:active {
+    background-color: #D9895B;
+    color: #2D2D2D;
+}
+
+/* Location Bar / Path Bar */
+.path-bar {
+    background-color: #1A1A1A;
+    border: 1px solid #00D9FF;
+    border-radius: 0;
+}
+
+.path-bar button {
+    background-color: transparent;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 0;
+    padding: 4px 8px;
+}
+
+.path-bar button:hover {
+    background-color: #333333;
+}
+
+.path-bar button:active {
+    background-color: #00D9FF;
+    color: #0F0F0F;
+}
+
+/* File/Folder View */
+.view {
+    background-color: #2D2D2D;
+    color: #F2E9E9;
+    border: none;
+}
+
+.view:selected {
+    background-color: #46658C;
+    color: #F2E9E9;
+}
+
+.view:selected:focus {
+    background-color: #D9895B;
+    color: #2D2D2D;
+}
+
+/* Scrollbars - Pixel Style */
+scrollbar {
+    background-color: #3A3A3A;
+    border-radius: 0;
+}
+
+scrollbar slider {
+    background-color: #4A4A4A;
+    border: 1px solid #46658C;
+    border-radius: 0;
+    min-width: 12px;
+    min-height: 12px;
+}
+
+scrollbar slider:hover {
+    background-color: #46658C;
+}
+
+scrollbar slider:active {
+    background-color: #D9895B;
+}
+
+/* Entry Fields */
+entry {
+    background-color: #3A3A3A;
+    color: #F2E9E9;
+    border: 1px solid #46658C;
+    border-radius: 0;
+    padding: 6px;
+}
+
+entry:focus {
+    border: 2px solid #D9895B;
+    background-color: #2D2D2D;
+}
+
+entry selection {
+    background-color: #46658C;
+    color: #F2E9E9;
+}
+
+/* Menus */
+menu {
+    background-color: #3A3A3A;
+    border: 2px solid #46658C;
+    border-radius: 0;
+    padding: 4px;
+}
+
+menuitem {
+    background-color: transparent;
+    color: #F2E9E9;
+    border-radius: 0;
+    padding: 6px 12px;
+    margin: 1px;
+}
+
+menuitem:hover {
+    background-color: #46658C;
+    color: #F2E9E9;
+}
+
+menuitem:disabled {
+    color: #BFADA8;
+}
+
+/* Popover */
+popover {
+    background-color: #1A1A1A;
+    border: 2px solid #00D9FF;
+    border-radius: 0;
+}
+
+/* Statusbar */
+statusbar {
+    background-color: #1A1A1A;
+    border-top: 2px solid #00D9FF;
+    color: #FFFFFF;
+    padding: 4px 8px;
+}
+
+/* Context Menu */
+.context-menu {
+    background-color: #1A1A1A;
+    border: 2px solid #00D9FF;
+    border-radius: 0;
+}
+
+/* Notebook Tabs */
+notebook {
+    background-color: #0F0F0F;
+}
+
+notebook header {
+    background-color: #1A1A1A;
+    border-bottom: 2px solid #00D9FF;
+}
+
+notebook tab {
+    background-color: #333333;
+    color: #FFFFFF;
+    border: 1px solid #666666;
+    border-radius: 0;
+    padding: 6px 12px;
+    margin: 2px;
+}
+
+notebook tab:hover {
+    background-color: #00D9FF;
+    color: #0F0F0F;
+}
+
+notebook tab:checked {
+    background-color: #00D9FF;
+    color: #0F0F0F;
+    border: 1px solid #00D9FF;
+}
+
+/* Tooltips */
+tooltip {
+    background-color: #1A1A1A;
+    border: 1px solid #00D9FF;
+    border-radius: 0;
+    color: #FFFFFF;
+    padding: 4px 8px;
+}
+
+/* Buttons - General */
+button {
+    background-color: #4A4A4A;
+    color: #F2E9E9;
+    border: 1px solid #46658C;
+    border-radius: 0;
+    padding: 6px 12px;
+    margin: 2px;
+}
+
+button:hover {
+    background-color: #46658C;
+    color: #F2E9E9;
+}
+
+button:active {
+    background-color: #D9895B;
+    color: #2D2D2D;
+}
+
+button:disabled {
+    background-color: #3A3A3A;
+    color: #BFADA8;
+    border: 1px solid #4A4A4A;
+}
+
+/* Checkboxes and Radio Buttons */
+checkbutton check, radiobutton radio {
+    background-color: #3A3A3A;
+    border: 1px solid #46658C;
+    border-radius: 0;
+    min-width: 16px;
+    min-height: 16px;
+}
+
+checkbutton check:checked, radiobutton radio:checked {
+    background-color: #46658C;
+    border: 1px solid #46658C;
+    -gtk-icon-source: none;
+    background-image: linear-gradient(to bottom, #46658C, #46658C);
+}
+
+/* Progress Bars */
+progressbar {
+    background-color: #3A3A3A;
+    border: 1px solid #46658C;
+    border-radius: 0;
+}
+
+progressbar progress {
+    background-color: #46658C;
+    border-radius: 0;
+}
+
+progressbar trough {
+    background-color: #3A3A3A;
+    border-radius: 0;
+}
+
+/* Separators */
+separator {
+    background-color: #4A4A4A;
+    min-width: 1px;
+    min-height: 1px;
+}

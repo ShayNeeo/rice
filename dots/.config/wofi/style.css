@@ -1,0 +1,63 @@
+/* Wofi - Pixel-Perfect Ocean Sorbet */
+window {
+    margin: 0px;
+    border: 2px solid #46658C;  /* Ocean blue border */
+    background-color: #2D2D2D;
+    font-family: "Terminus", "Terminus (TTF)", monospace;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+#input {
+    background-color: #3A3A3A;
+    color: #F2E9E9;
+    border: 1px solid #46658C;
+    padding: 8px 12px;
+    margin: 8px;
+    outline: none;
+}
+
+#input:focus {
+    border: 1px solid #D9895B;  /* Coral focus */
+}
+
+#inner-box {
+    margin: 8px;
+    padding: 0;
+    background-color: #2D2D2D;
+}
+
+#outer-box {
+    margin: 0px;
+    padding: 0;
+    background-color: #2D2D2D;
+}
+
+#scroll {
+    margin: 0px;
+    border: none;
+}
+
+#entry {
+    padding: 6px 12px;
+    margin: 2px;
+    background-color: transparent;
+    color: #F2E9E9;
+    border: 1px solid transparent;
+}
+
+#entry:hover {
+    background-color: #3A3A3A;
+    border: 1px solid #BFADA8;
+}
+
+#entry:selected {
+    background-color: #46658C;  /* Ocean Blue */
+    color: #F2E9E9;
+    border: 1px solid #46658C;
+}
+
+#text {
+    padding: 0;
+    margin: 0;
+}

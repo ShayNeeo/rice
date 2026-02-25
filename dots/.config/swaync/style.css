@@ -1,0 +1,206 @@
+/* SwayNC - Pixel-Perfect Ocean Sorbet Theme */
+
+* {
+    font-family: "Terminus", monospace;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.notification-row {
+    outline: none;
+    margin: 0;
+    padding: 0px;
+}
+
+.notification {
+    background-color: #3A3A3A;
+    border: 2px solid #46658C;
+    border-radius: 0;
+    margin: 6px;
+    padding: 0;
+}
+
+.notification-content {
+    background-color: transparent;
+    padding: 10px;
+    border-radius: 0;
+}
+
+.notification-default-action {
+    background-color: transparent;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.close-button {
+    background-color: #D9895B;
+    color: #2D2D2D;
+    border-radius: 0;
+    border: none;
+    padding: 4px 8px;
+    margin: 6px;
+}
+
+.close-button:hover {
+    background-color: #E5A174;
+    color: #2D2D2D;
+}
+
+.notification-action {
+    background-color: #46658C;
+    color: #F2E9E9;
+    border-radius: 0;
+    border: 1px solid #46658C;
+    padding: 6px;
+    margin: 4px;
+}
+
+.notification-action:hover {
+    background-color: #5A7FA8;
+}
+
+.summary {
+    color: #D9895B;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.body {
+    color: #F2E9E9;
+}
+
+.control-center {
+    background-color: #2D2D2D;
+    border: 2px solid #46658C;
+    border-radius: 0;
+    margin: 10px;
+}
+
+.control-center-list {
+    background-color: transparent;
+}
+
+.control-center-list-placeholder {
+    color: #BFADA8;
+}
+
+.widget-title {
+    background-color: #46658C;
+    color: #F2E9E9;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 0;
+    margin: 0;
+}
+
+.widget-title > button {
+    background-color: transparent;
+    color: #F2E9E9;
+    border-radius: 0;
+    padding: 4px 8px;
+}
+
+.widget-title > button:hover {
+    background-color: #5A7FA8;
+}
+
+.widget-dnd {
+    background-color: #3A3A3A;
+    border: 1px solid #BFADA8;
+    border-radius: 0;
+    margin: 6px;
+    padding: 8px;
+}
+
+.widget-dnd > switch {
+    background-color: #BFADA8;
+    border-radius: 0;
+}
+
+.widget-dnd > switch:checked {
+    background-color: #D9895B;
+}
+
+.widget-label {
+    color: #F2E9E9;
+    margin: 6px;
+}
+
+.widget-label > label {
+    color: #F2E9E9;
+}
+
+.widget-mpris {
+    background-color: #3A3A3A;
+    border: 1px solid #46658C;
+    border-radius: 0;
+    margin: 6px;
+    padding: 8px;
+}
+
+.widget-mpris-player {
+    background-color: transparent;
+    padding: 8px;
+}
+
+.widget-mpris-title {
+    color: #D9895B;
+    font-weight: bold;
+}
+
+.widget-mpris-subtitle {
+    color: #BFADA8;
+}
+
+.widget-buttons-grid {
+    padding: 6px;
+}
+
+.widget-buttons-grid > flowbox > flowboxchild > button {
+    background-color: #3A3A3A;
+    border: 1px solid #46658C;
+    border-radius: 0;
+    color: #F2E9E9;
+    padding: 10px;
+    margin: 4px;
+}
+
+.widget-buttons-grid > flowbox > flowboxchild > button:hover {
+    background-color: #46658C;
+}
+
+.widget-menubar {
+    background-color: transparent;
+    padding: 6px;
+}
+
+.widget-menubar > box > box > button {
+    background-color: #3A3A3A;
+    border: 1px solid #46658C;
+    border-radius: 0;
+    color: #F2E9E9;
+    padding: 8px;
+    margin: 2px;
+}
+
+.widget-menubar > box > box > button:hover {
+    background-color: #46658C;
+}
+
+.topbar-buttons {
+    background-color: transparent;
+}
+
+.topbar-buttons > button {
+    background-color: #3A3A3A;
+    border: 1px solid #46658C;
+    border-radius: 0;
+    color: #F2E9E9;
+    padding: 6px 10px;
+    margin: 4px;
+}
+
+.topbar-buttons > button:hover {
+    background-color: #46658C;
+}

@@ -1,0 +1,189 @@
+* {
+    border: none;
+    border-radius: 0;  /* Pixel-perfect squares */
+    font-family: "Terminus", "Terminus (TTF)", monospace;
+    font-size: 13px;
+    font-weight: bold;
+    min-height: 0;
+    transition: none;  /* No transitions = max performance */
+}
+
+window#waybar {
+    background-color: #2D2D2D;
+    color: #F2E9E9;
+    border-bottom: 2px solid #46658C;  /* Ocean blue accent */
+}
+
+#workspaces {
+    background-color: transparent;
+    margin: 3px 6px;
+}
+
+#workspaces button {
+    padding: 2px 10px;
+    background-color: #3A3A3A;  /* Dark block */
+    color: #BFADA8;
+    margin-right: 3px;
+    border: 1px solid #46658C;
+    min-width: 24px;
+}
+
+#workspaces button.active {
+    background-color: #46658C;  /* Ocean Blue */
+    color: #F2E9E9;
+    border: 1px solid #46658C;
+}
+
+#workspaces button.urgent {
+    background-color: #D9895B;  /* Coral */
+    color: #2D2D2D;
+    border: 1px solid #D9895B;
+}
+
+#clock {
+    background-color: #D9895B;  /* Coral */
+    color: #2D2D2D;
+    padding: 3px 12px;
+    margin: 3px 0;
+    border: 1px solid #D9895B;
+}
+
+/* Right Modules - Ocean Sorbet Pixel Blocks */
+#custom-power {
+    background-color: #46658C;  /* Ocean Blue */
+    color: #F2E9E9;
+    padding: 3px 10px;
+    margin: 3px 0 3px 6px;
+    border: 1px solid #46658C;
+}
+
+#pulseaudio {
+    background-color: #4A6D8C;  /* Light Ocean Blue */
+    color: #F2E9E9;
+    padding: 3px 10px;
+    margin: 3px 0;
+    border: 1px solid #4A6D8C;
+}
+
+#pulseaudio.muted {
+    background-color: #BFADA8;
+    color: #2D2D2D;
+    border: 1px solid #BFADA8;
+}
+
+#cpu {
+    background-color: #D9895B;  /* Coral */
+    color: #2D2D2D;
+    padding: 3px 10px;
+    margin: 3px 0;
+    border: 1px solid #D9895B;
+}
+
+#memory {
+    background-color: #BFADA8;  /* Beige */
+    color: #2D2D2D;
+    padding: 3px 10px;
+    margin: 3px 0;
+    border: 1px solid #BFADA8;
+}
+
+#network {
+    background-color: #46658C;  /* Ocean Blue */
+    color: #F2E9E9;
+    padding: 3px 10px;
+    margin: 3px 0;
+    border: 1px solid #46658C;
+}
+
+#network.disconnected {
+    background-color: #BFADA8;
+    color: #2D2D2D;
+    border: 1px solid #BFADA8;
+}
+
+#bluetooth {
+    background-color: #D9895B;  /* Coral */
+    color: #2D2D2D;
+    padding: 3px 10px;
+    margin: 3px 0;
+    border: 1px solid #D9895B;
+}
+
+#bluetooth.disabled {
+    background-color: #3A3A3A;
+    color: #BFADA8;
+    border: 1px solid #3A3A3A;
+}
+
+#battery {
+    background-color: #4A6D8C;  /* Light Ocean Blue */
+    color: #F2E9E9;
+    padding: 3px 10px;
+    margin: 3px 6px 3px 0;
+    border: 1px solid #4A6D8C;
+}
+
+#battery.charging {
+    background-color: #46658C;  /* Ocean Blue */
+    color: #F2E9E9;
+    border: 1px solid #46658C;
+}
+
+#battery.warning {
+    background-color: #D9895B;  /* Coral */
+    color: #2D2D2D;
+    border: 1px solid #D9895B;
+}
+
+#battery.critical:not(.charging) {
+    background-color: #D9895B;  /* Coral */
+    color: #F2E9E9;
+    border: 1px solid #D9895B;
+    animation: blink 1s steps(2) infinite;
+}
+
+@keyframes blink {
+    50% { background-color: #F2E9E9; color: #D9895B; }
+}
+
+/* Fcitx5 Input Method Status */
+#custom-fcitx5 {
+    background-color: #8C6B7A;  /* Mauve */
+    color: #F2E9E9;
+    padding: 3px 10px;
+    margin: 3px 0;
+    border: 1px solid #8C6B7A;
+}
+
+/* Notification Status (SwayNC) */
+#custom-notifications {
+    background-color: #6D8C9D;  /* Cyan/Ocean Light */
+    color: #F2E9E9;
+    padding: 3px 10px;
+    margin: 3px 0;
+    border: 1px solid #6D8C9D;
+}
+
+#custom-notifications.dnd {
+    background-color: #BFADA8;  /* Beige - DND mode */
+    color: #2D2D2D;
+    border: 1px solid #BFADA8;
+}
+
+#custom-notifications.has-notifications {
+    background-color: #D9895B;  /* Coral - has notifications */
+    color: #2D2D2D;
+    border: 1px solid #D9895B;
+}
+
+#custom-notifications.empty {
+    background-color: #3A3A3A;  /* Dark - no notifications */
+    color: #BFADA8;
+    border: 1px solid #3A3A3A;
+}
+
+#custom-notifications.disabled {
+    background-color: #3A3A3A;
+    color: #BFADA8;
+    border: 1px solid #3A3A3A;
+}

@@ -1,0 +1,107 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 30,
+    "spacing": 0,
+    "modules-left": ["hyprland/workspaces"],
+    "modules-center": ["clock"],
+    "modules-right": ["custom/notifications", "custom/fcitx5", "network", "bluetooth", "custom/power", "pulseaudio", "cpu", "memory", "battery"],
+    
+    "hyprland/workspaces": {
+        "format": "{id}",
+        "on-click": "activate",
+        "all-outputs": true,
+        "sort-by-number": true,
+        "persistent-workspaces": {
+            "1": [],
+            "2": [],
+            "3": [],
+            "4": [],
+            "5": []
+        }
+    },
+    
+    "clock": {
+        "interval": 1,
+        "format": "{:%H:%M:%S}",
+        "format-alt": "{:%Y-%m-%d}",
+        "tooltip": false
+    },
+    
+    "network": {
+        "interval": 3,
+        "format-wifi": "NET:{signalStrength}%",
+        "format-ethernet": "NET:OK",
+        "format-disconnected": "NET:--",
+        "tooltip": false,
+        "on-click": "nm-connection-editor"
+    },
+    
+    "bluetooth": {
+        "interval": 3,
+        "format": "BT:{status}",
+        "format-disabled": "BT:OFF",
+        "format-connected": "BT:{num_connections}",
+        "tooltip": false,
+        "on-click": "blueman-manager"
+    },
+    
+    "custom/power": {
+        "exec": "powerprofilesctl get | cut -c1-4 | tr '[:lower:]' '[:upper:]'",
+        "interval": 5,
+        "format": "PWR:{}",
+        "tooltip": false,
+        "on-click": "powerprofilesctl set balanced"
+    },
+    
+    "pulseaudio": {
+        "interval": 1,
+        "format": "VOL:{volume}%",
+        "format-muted": "VOL:--",
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "pavucontrol",
+        "tooltip": false
+    },
+    
+    "cpu": {
+        "interval": 2,
+        "format": "CPU:{usage}%",
+        "tooltip": false
+    },
+    
+    "memory": {
+        "interval": 2,
+        "format": "RAM:{percentage}%",
+        "tooltip": false
+    },
+    
+    "battery": {
+        "interval": 10,
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "BAT:{capacity}%",
+        "format-charging": "CHG:{capacity}%",
+        "format-full": "FULL",
+        "tooltip": false
+    },
+    
+    "custom/fcitx5": {
+        "exec": "~/.config/waybar/scripts/fcitx5-status.sh",
+        "interval": 1,
+        "format": "IM:{}",
+        "tooltip": false,
+        "on-click": "fcitx5-remote -t"
+    },
+    
+    "custom/notifications": {
+        "exec": "~/.config/waybar/scripts/swaync-status.sh",
+        "interval": 1,
+        "return-type": "json",
+        "format": "{}",
+        "tooltip": false,
+        "on-click": "swaync-client -t -sw",
+        "on-click-right": "swaync-client -d -sw"
+    }
+}

@@ -1,0 +1,55 @@
+# Pixel-Perfect AI-Agent Terminal Config
+
+# Font (Pixel-perfect bitmap)
+font-family = "Terminus"
+font-size = 12
+font-feature = -liga  # Disable ligatures for pixel aesthetic
+
+# Window (Performance)
+window-decoration = false
+window-padding-x = 4
+window-padding-y = 4
+
+# Colors (Ocean Sorbet - High contrast for coding)
+background = #2D2D2D
+foreground = #F2E9E9
+selection-background = #46658C
+selection-foreground = #F2E9E9
+
+# Cursor (Pixel block)
+cursor-style = block
+cursor-style-blink = false
+cursor-color = #D9895B
+
+# Palette - Ocean Sorbet
+# Black & Gray
+palette = 0=#2D2D2D
+palette = 8=#BFADA8
+# Red/Coral
+palette = 1=#D9895B
+palette = 9=#E5A174
+# Green/Teal
+palette = 2=#4A6D8C
+palette = 10=#5C8BA8
+# Yellow/Beige
+palette = 3=#BFADA8
+palette = 11=#D4C4BE
+# Blue (Ocean)
+palette = 4=#46658C
+palette = 12=#5A7FA8
+# Magenta/Mauve
+palette = 5=#8C6B7A
+palette = 13=#A68494
+# Cyan/Ocean Light
+palette = 6=#6D8C9D
+palette = 14=#8AA5B5
+# White/Cream
+palette = 7=#F2E9E9
+palette = 15=#FFFFFF
+
+# Performance optimizations
+shell-integration-features = no-cursor
+clipboard-trim-trailing-spaces = true
+
+# Shell (AI-Agent optimized)
+command = /bin/bash

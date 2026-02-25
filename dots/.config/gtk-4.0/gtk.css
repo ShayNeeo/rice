@@ -1,0 +1,144 @@
+/* Ocean Sorbet GTK4 Theme */
+/* Pixel-Perfect Modern Design */
+
+/* Window Background */
+window {
+    background-color: #2D2D2D;
+    color: #F2E9E9;
+    font-family: "Terminus", monospace;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: #3A3A3A;
+    color: #F2E9E9;
+    border-right: 2px solid #46658C;
+}
+
+.sidebar row {
+    background-color: transparent;
+    color: #F2E9E9;
+    border-radius: 0;
+    padding: 4px 8px;
+    margin: 2px;
+}
+
+.sidebar row:hover {
+    background-color: #4A4A4A;
+}
+
+.sidebar row:selected {
+    background-color: #46658C;
+    color: #F2E9E9;
+    font-weight: bold;
+}
+
+/* Toolbar / Headerbar */
+headerbar {
+    background-color: #3A3A3A;
+    border-bottom: 2px solid #46658C;
+    color: #F2E9E9;
+    border-radius: 0;
+    padding: 4px;
+    min-height: 36px;
+}
+
+headerbar button {
+    background-color: #4A4A4A;
+    color: #F2E9E9;
+    border: 1px solid #46658C;
+    border-radius: 0;
+    padding: 4px 8px;
+    margin: 2px;
+    min-height: 24px;
+}
+
+headerbar button:hover {
+    background-color: #46658C;
+    color: #F2E9E9;
+}
+
+headerbar button:active {
+    background-color: #D9895B;
+    color: #2D2D2D;
+}
+
+/* Views */
+.view {
+    background-color: #2D2D2D;
+    color: #F2E9E9;
+}
+
+.view:selected {
+    background-color: #46658C;
+    color: #F2E9E9;
+}
+
+/* Scrollbars */
+scrollbar {
+    background-color: #3A3A3A;
+    border-radius: 0;
+}
+
+scrollbar slider {
+    background-color: #4A4A4A;
+    border: 1px solid #46658C;
+    border-radius: 0;
+    min-width: 12px;
+    min-height: 12px;
+}
+
+scrollbar slider:hover {
+    background-color: #46658C;
+}
+
+/* Entry Fields */
+entry {
+    background-color: #3A3A3A;
+    color: #F2E9E9;
+    border: 1px solid #46658C;
+    border-radius: 0;
+    padding: 6px;
+}
+
+entry:focus {
+    border: 2px solid #D9895B;
+}
+
+/* Buttons */
+button {
+    background-color: #4A4A4A;
+    color: #F2E9E9;
+    border: 1px solid #46658C;
+    border-radius: 0;
+    padding: 6px 12px;
+}
+
+button:hover {
+    background-color: #46658C;
+    color: #F2E9E9;
+}
+
+button:active {
+    background-color: #D9895B;
+    color: #2D2D2D;
+}
+
+/* Menus */
+popover {
+    background-color: #3A3A3A;
+    border: 2px solid #46658C;
+    border-radius: 0;
+}
+
+popover modelbutton {
+    background-color: transparent;
+    color: #F2E9E9;
+    border-radius: 0;
+    padding: 6px 12px;
+}
+
+popover modelbutton:hover {
+    background-color: #46658C;
+    color: #F2E9E9;
+}

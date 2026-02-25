@@ -1,0 +1,8 @@
+mode=drun
+show=drun
+width=500
+height=400
+prompt=RUN
+allow_images=false
+insensitive=true
+columns=1
