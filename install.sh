@@ -164,10 +164,17 @@ $AUR_HELPER -S --needed --noconfirm \
     polkit-kde-agent \
     polkit-gnome
 
-# Terminal and Shell
-$AUR_HELPER -S --needed --noconfirm \
-    ghostty-bin \
-    bash-completion
+# Terminal and Shell (Ghostty with safe fallbacks)
+echo "   Installing terminal (Ghostty, with fallback)..."
+if ! sudo pacman -S --needed --noconfirm ghostty 2>/dev/null; then
+    echo -e "   ${YELLOW}⚠️  ghostty (repo) not available, trying AUR ghostty-bin...${NC}"
+    $AUR_HELPER -S --needed --noconfirm ghostty-bin || {
+        echo -e "   ${YELLOW}⚠️  ghostty install failed, installing alacritty as fallback terminal${NC}"
+        sudo pacman -S --needed --noconfirm alacritty || true
+    }
+fi
+
+sudo pacman -S --needed --noconfirm bash-completion
 
 # Input Method (fcitx5 with Vietnamese support)
 # Switched to fcitx5-lotus-git (Vietnamese IME, same author as VMK fork)
