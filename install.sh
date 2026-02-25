@@ -336,8 +336,22 @@ CPU_IS_AMD=0
 grep -q 'AuthenticAMD' /proc/cpuinfo 2>/dev/null && CPU_IS_AMD=1
 
 if [ "$HAS_INTEL_GPU" -eq 1 ] && [ "$HAS_AMD_GPU" -eq 1 ]; then
-    echo "   Intel + AMD hybrid (e.g. Ideapad 500-15ISK): intel-gpu-tools + amdgpu_top (no ryzenadj)."
-    sudo pacman -S --needed --noconfirm intel-gpu-tools 2>/dev/null || true
+    echo "   Intel + AMD hybrid (e.g. Ideapad 500-15ISK): Installing drivers & monitoring tools..."
+    
+    # Drivers for Hardware Acceleration and Vulkan
+    # Note: libva-mesa-driver is now provided by the 'mesa' package
+    sudo pacman -S --needed --noconfirm \
+        intel-media-driver \
+        libva-intel-driver \
+        libvdpau-va-gl \
+        vulkan-intel \
+        vulkan-radeon \
+        vulkan-icd-loader \
+        libva-utils \
+        vdpauinfo \
+        vulkan-tools \
+        intel-gpu-tools
+
     $AUR_HELPER -S --needed --noconfirm amdgpu_top-bin || {
         echo -e "   ${YELLOW}⚠️  amdgpu_top install failed, continuing...${NC}"
     }
@@ -579,15 +593,21 @@ fi
 if [ "$LAPTOP_PROFILE" = "ideapad500" ] && ! grep -q 'Ideapad 500-15ISK' "$HOME/.config/hypr/custom/env.conf" 2>/dev/null; then
     cat >> "$HOME/.config/hypr/custom/env.conf" <<'IDPAD_EOF'
 
-# --- Ideapad 500-15ISK: use iGPU first, Radeon on demand ---
-# Best: desktop/compositor on Intel (battery, stability); run heavy apps on AMD when needed.
-# - Default: everything uses Intel iGPU (already the case; do not set DRI_PRIME globally).
-# - Run one app on AMD dGPU:  DRI_PRIME=1 /path/to/game
-# - Or in a terminal:         DRI_PRIME=1 steam
-# Uncomment to force one app via Hyprland env (example; change command to your app):
-# env = DRI_PRIME,1
+# --- Ideapad 500-15ISK: Hybrid Graphics & Hardware Accel ---
+# Desktop/Compositor runs on Intel iGPU (better battery/stability)
+# Run heavy apps on AMD dGPU with: DRI_PRIME=1 <program>
+
+# Hardware Video Acceleration (Intel iGPU default)
+env = LIBVA_DRIVER_NAME,iHD
+env = VDPAU_DRIVER,va_gl
+
+# To use AMD for hardware encoding/decoding (e.g. in OBS or Video Editors):
+# Launch with: LIBVA_DRIVER_NAME=radeonsi VDPAU_DRIVER=radeonsi <program>
+
+# Vulkan Selection
+# Default: Intel. For AMD: VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/radeon_icd.x86_64.json
 IDPAD_EOF
-    echo -e "   ${GREEN}✓${NC} Added Ideapad 500-15ISK hybrid GPU hint (iGPU first, dGPU on demand) to custom/env.conf"
+    echo -e "   ${GREEN}✓${NC} Added Ideapad 500-15ISK hybrid GPU & Hardware Accel hints to custom/env.conf"
 fi
 
 echo -e "   ${GREEN}✓${NC} Custom configs directory: $HOME/.config/hypr/custom/"
