@@ -203,7 +203,8 @@ $AUR_HELPER -S --needed --noconfirm \
     ttf-font-awesome \
     ttf-jetbrains-mono-nerd \
     noto-fonts \
-    noto-fonts-emoji
+    noto-fonts-emoji \
+    noto-fonts-cjk
 
 # LaTeX Support (User Request)
 echo "   Installing LaTeX packages (TexLive)..."
