@@ -11,8 +11,9 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Ensure script runs from its directory
+# Ensure script runs from its directory and remember base path
 cd "$(dirname "$0")"
+SCRIPT_DIR="$(pwd)"
 
 echo -e "${GREEN}╔════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║   Pixel Rice Installer for Arch               ║${NC}"
@@ -134,7 +135,8 @@ else
     git clone https://aur.archlinux.org/yay-bin.git
     cd yay-bin
     makepkg -si --noconfirm
-    cd "$OLDPWD"
+    # Always return to installer directory (SCRIPT_DIR), not /tmp
+    cd "$SCRIPT_DIR"
     AUR_HELPER="yay"
     echo -e "   ${GREEN}✓ yay installed successfully${NC}"
 fi
@@ -412,7 +414,7 @@ fi
 # Install Ryzen Power Management Service if ryzenadj is installed
 if command -v ryzenadj >/dev/null 2>&1; then
     echo "   Installing Ryzen Power Management Service (ryzen-power)..."
-    sudo cp scripts/manage_power.sh /usr/local/bin/ryzen-power
+    sudo cp "$SCRIPT_DIR/scripts/manage_power.sh" /usr/local/bin/ryzen-power
     sudo chmod +x /usr/local/bin/ryzen-power
     
     sudo tee /etc/systemd/system/ryzen-power.service > /dev/null <<EOF
@@ -580,10 +582,10 @@ echo -e "   ${GREEN}✓${NC} Custom configs directory: $HOME/.config/hypr/custom
 
 # Now install Hyprland configs (excluding custom directory to preserve user configs)
 if command -v rsync >/dev/null 2>&1; then
-    rsync -a --exclude='custom' "dots/.config/hypr"/ "$HOME/.config/hypr"/
+    rsync -a --exclude='custom' "$SCRIPT_DIR/dots/.config/hypr"/ "$HOME/.config/hypr"/
 else
     # Manual copy excluding custom directory
-    for item in dots/.config/hypr/*; do
+    for item in "$SCRIPT_DIR"/dots/.config/hypr/*; do
         basename_item=$(basename "$item")
         if [ "$basename_item" != "custom" ]; then
             cp -a "$item" "$HOME/.config/hypr/"
@@ -594,7 +596,7 @@ fi
 echo -e "   ${GREEN}✓${NC} Installed Hyprland configs (preserved custom/)"
 
 echo "   Installing Waybar config..."
-install_config "dots/.config/waybar" "$HOME/.config/waybar"
+install_config "$SCRIPT_DIR/dots/.config/waybar" "$HOME/.config/waybar"
 
 # Make waybar scripts executable
 if [ -d "$HOME/.config/waybar/scripts" ]; then
@@ -603,71 +605,71 @@ if [ -d "$HOME/.config/waybar/scripts" ]; then
 fi
 
 echo "   Installing Ghostty config..."
-install_config "dots/.config/ghostty" "$HOME/.config/ghostty"
+install_config "$SCRIPT_DIR/dots/.config/ghostty" "$HOME/.config/ghostty"
 
 echo "   Installing Wofi config..."
-install_config "dots/.config/wofi" "$HOME/.config/wofi"
+install_config "$SCRIPT_DIR/dots/.config/wofi" "$HOME/.config/wofi"
 
 echo "   Installing Rofi config..."
-install_config "dots/.config/rofi" "$HOME/.config/rofi"
+install_config "$SCRIPT_DIR/dots/.config/rofi" "$HOME/.config/rofi"
 
 echo "   Installing Wlogout config..."
-install_config "dots/.config/wlogout" "$HOME/.config/wlogout"
+install_config "$SCRIPT_DIR/dots/.config/wlogout" "$HOME/.config/wlogout"
 
 echo "   Installing SwayNC config..."
-install_config "dots/.config/swaync" "$HOME/.config/swaync"
+install_config "$SCRIPT_DIR/dots/.config/swaync" "$HOME/.config/swaync"
 
 echo "   Installing GTK configs..."
-install_config "dots/.config/gtk-3.0" "$HOME/.config/gtk-3.0"
-install_config "dots/.config/gtk-4.0" "$HOME/.config/gtk-4.0"
+install_config "$SCRIPT_DIR/dots/.config/gtk-3.0" "$HOME/.config/gtk-3.0"
+install_config "$SCRIPT_DIR/dots/.config/gtk-4.0" "$HOME/.config/gtk-4.0"
 
 echo "   Installing Qt6ct config..."
-install_config "dots/.config/qt6ct" "$HOME/.config/qt6ct"
+install_config "$SCRIPT_DIR/dots/.config/qt6ct" "$HOME/.config/qt6ct"
 
 # Install Scripts
 echo "   Installing user scripts..."
 mkdir -p "$HOME/.local/bin"
-if [ -f "scripts/cheatsheet.sh" ]; then
-    cp "scripts/cheatsheet.sh" "$HOME/.local/bin/cheatsheet.sh"
+if [ -f "$SCRIPT_DIR/scripts/cheatsheet.sh" ]; then
+    cp "$SCRIPT_DIR/scripts/cheatsheet.sh" "$HOME/.local/bin/cheatsheet.sh"
     chmod +x "$HOME/.local/bin/cheatsheet.sh"
     echo -e "   ${GREEN}✓${NC} Installed cheatsheet.sh"
 fi
 
-if [ -f "scripts/eyeprotect.sh" ]; then
-    cp "scripts/eyeprotect.sh" "$HOME/.local/bin/eyeprotect.sh"
+if [ -f "$SCRIPT_DIR/scripts/eyeprotect.sh" ]; then
+    cp "$SCRIPT_DIR/scripts/eyeprotect.sh" "$HOME/.local/bin/eyeprotect.sh"
     chmod +x "$HOME/.local/bin/eyeprotect.sh"
     echo -e "   ${GREEN}✓${NC} Installed eyeprotect.sh"
 fi
 
-if [ -f "scripts/screenrecord.sh" ]; then
-    cp "scripts/screenrecord.sh" "$HOME/.local/bin/screenrecord.sh"
+if [ -f "$SCRIPT_DIR/scripts/screenrecord.sh" ]; then
+    cp "$SCRIPT_DIR/scripts/screenrecord.sh" "$HOME/.local/bin/screenrecord.sh"
     chmod +x "$HOME/.local/bin/screenrecord.sh"
     echo -e "   ${GREEN}✓${NC} Installed screenrecord.sh"
 fi
 
-if [ -f "scripts/osd.sh" ]; then
-    cp "scripts/osd.sh" "$HOME/.local/bin/osd.sh"
+if [ -f "$SCRIPT_DIR/scripts/osd.sh" ]; then
+    cp "$SCRIPT_DIR/scripts/osd.sh" "$HOME/.local/bin/osd.sh"
     chmod +x "$HOME/.local/bin/osd.sh"
     echo -e "   ${GREEN}✓${NC} Installed osd.sh"
 fi
 
-if [ -f "scripts/smart-suspend.sh" ]; then
-    cp "scripts/smart-suspend.sh" "$HOME/.local/bin/smart-suspend.sh"
+if [ -f "$SCRIPT_DIR/scripts/smart-suspend.sh" ]; then
+    cp "$SCRIPT_DIR/scripts/smart-suspend.sh" "$HOME/.local/bin/smart-suspend.sh"
     chmod +x "$HOME/.local/bin/smart-suspend.sh"
     echo -e "   ${GREEN}✓${NC} Installed smart-suspend.sh"
 fi
 
-if [ -f "scripts/battery-monitor.sh" ]; then
-    cp "scripts/battery-monitor.sh" "$HOME/.local/bin/battery-monitor.sh"
+if [ -f "$SCRIPT_DIR/scripts/battery-monitor.sh" ]; then
+    cp "$SCRIPT_DIR/scripts/battery-monitor.sh" "$HOME/.local/bin/battery-monitor.sh"
     chmod +x "$HOME/.local/bin/battery-monitor.sh"
     echo -e "   ${GREEN}✓${NC} Installed battery-monitor.sh"
 fi
 
 # Install SDDM Theme
-if [ -d "sddm-theme" ]; then
+if [ -d "$SCRIPT_DIR/sddm-theme" ]; then
     echo "   Installing SDDM theme..."
     sudo mkdir -p /usr/share/sddm/themes/pixel
-    sudo cp -r sddm-theme/* /usr/share/sddm/themes/pixel/
+    sudo cp -r "$SCRIPT_DIR/sddm-theme/"* /usr/share/sddm/themes/pixel/
     
     # Create default background if not exists
     if [ ! -f "/usr/share/sddm/themes/pixel/background.png" ]; then
@@ -707,9 +709,9 @@ EOF
 fi
 
 # Install wallpapers if exist
-if [ -d "wallpapers" ]; then
+if [ -d "$SCRIPT_DIR/wallpapers" ]; then
     mkdir -p "$HOME/Pictures/wallpapers"
-    cp -r wallpapers/* "$HOME/Pictures/wallpapers/" 2>/dev/null || true
+    cp -r "$SCRIPT_DIR/wallpapers/"* "$HOME/Pictures/wallpapers/" 2>/dev/null || true
     echo -e "   ${GREEN}✓${NC} Installed wallpapers"
 fi
 
