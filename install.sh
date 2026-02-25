@@ -167,8 +167,8 @@ $AUR_HELPER -S --needed --noconfirm \
 # Terminal and Shell (Ghostty with safe fallbacks)
 echo "   Installing terminal (Ghostty, with fallback)..."
 if ! sudo pacman -S --needed --noconfirm ghostty 2>/dev/null; then
-    echo -e "   ${YELLOW}⚠️  ghostty (repo) not available, trying AUR ghostty-bin...${NC}"
-    $AUR_HELPER -S --needed --noconfirm ghostty-bin || {
+    echo -e "   ${YELLOW}⚠️  ghostty (repo) not available, trying AUR ghostty-git...${NC}"
+    $AUR_HELPER -S --needed --noconfirm ghostty-git || {
         echo -e "   ${YELLOW}⚠️  ghostty install failed, installing alacritty as fallback terminal${NC}"
         sudo pacman -S --needed --noconfirm alacritty || true
     }
@@ -195,7 +195,7 @@ $AUR_HELPER -S --needed --noconfirm \
     grim \
     slurp \
     swappy \
-    wl-screenrec-bin
+    wl-screenrec
 
 # Fonts
 $AUR_HELPER -S --needed --noconfirm \
@@ -301,14 +301,14 @@ $AUR_HELPER -S --needed --noconfirm \
     power-profiles-daemon \
     udiskie \
     tmux \
-    yazi-bin \
+    yazi \
     ffmpegthumbnailer \
     ueberzugpp \
     poppler \
     fd \
     ripgrep \
     fzf \
-    zoxide-bin \
+    zoxide \
     blesh-git \
     btop \
     htop \
@@ -318,8 +318,7 @@ $AUR_HELPER -S --needed --noconfirm \
 echo "   Installing Atuin for intelligent command history..."
 # Use official repo package 'atuin' instead of AUR 'atuin-bin'
 $AUR_HELPER -S --needed --noconfirm atuin || {
-    echo -e "${YELLOW}   ⚠️  atuin install failed, trying atuin-bin...${NC}"
-    $AUR_HELPER -S --needed --noconfirm atuin-bin
+    echo -e "${YELLOW}   ⚠️  atuin install failed; you can also install it later with 'sudo pacman -S atuin'${NC}"
 }
 
 # GPU Monitoring and Power Management (Auto-detect)
@@ -359,8 +358,14 @@ else
     echo -e "   ${YELLOW}⚠️  No specific GPU detected, skipping GPU monitoring tools${NC}"
 fi
 
-# Notification (swaynotificationcenter is lightweight and compatible)
-$AUR_HELPER -S --needed --noconfirm swaync-bin
+# Notification (SwayNotificationCenter; prefer repo, fallback to AUR git)
+echo "   Installing notification center (swaync)..."
+if ! sudo pacman -S --needed --noconfirm swaync 2>/dev/null; then
+    echo -e "   ${YELLOW}⚠️  swaync (repo) not available, trying AUR swaync-git...${NC}"
+    $AUR_HELPER -S --needed --noconfirm swaync-git || {
+        echo -e "   ${YELLOW}⚠️  swaync install failed, notifications will be limited until you install it manually${NC}"
+    }
+fi
 
 # Display Manager (SDDM)
 echo "   Installing SDDM display manager..."
