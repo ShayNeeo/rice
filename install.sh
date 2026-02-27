@@ -756,8 +756,10 @@ if ! grep -q "PIXEL-RICE" "$BASHRC" 2>/dev/null; then
 
 # --- PIXEL-RICE ---
 
-# AI Agent / Editor Environment Fix (Antigravity, VS Code, Cursor, CI, etc.)
+# --- AI AGENT & CODE EDITOR ENVIRONMENT FIX ---
+# Detect if running in an automated or code editor agent context
 is_agent_env=0
+
 [[ -n "$ANTIGRAVITY_AGENT" ]] && is_agent_env=1
 [[ -n "$AGENT_ENVIRONMENT" ]] && is_agent_env=1
 [[ -n "$CI" ]] && is_agent_env=1
@@ -769,125 +771,93 @@ is_agent_env=0
 [[ -n "$GITHUB_ACTIONS" ]] && is_agent_env=1
 
 if [[ $is_agent_env -eq 1 ]]; then
-    # Minimal, clean prompt with no escape codes
     export PS1='$ '
     unset PROMPT_COMMAND
     export TERM=dumb
     export CLICOLOR=0
     export NO_COLOR=1
-    set +H  # Disable history expansion
-
-    # Optional: agent-specific, non-interactive profile
+    set +H
     [ -f "$HOME/.agent_profile" ] && source "$HOME/.agent_profile"
-
-    # Skip the rest of interactive bashrc for agents
     return
 fi
+# --- END CODE EDITOR AGENT FIX ---
 
-# Ble.sh - Bash Line Editor (Syntax highlighting & Autosuggestions)
-# MUST be sourced first in the block
-if [ -f /usr/share/blesh/ble.sh ]; then
-    source /usr/share/blesh/ble.sh
+# If not running interactively, don't do anything
+[[ $- != *i* ]] && return
+
+# --- SESSION DETECTION ---
+# Detect if we are logged in remotely via SSH (Termius, etc.)
+is_remote_session=0
+if [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" || -n "$SSH_CONNECTION" ]]; then
+    is_remote_session=1
 fi
 
-# PATH Configuration (Bun + local tools)
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$HOME/.local/bin:$HOME/.local/lib/node_modules/bin:$PATH"
+# --- GLOBAL CONFIGURATION (Runs Locally and Remotely) ---
+alias ls='ls --color=auto'
+alias grep='grep --color=auto'
 
-# Node.js Configuration
-export npm_config_prefix="$HOME/.local"
+# Basic prompt fallback for remote sessions
+PS1='[\u@\h \W]\$ '
 
-# Qt/Wayland Configuration
-export QT_QPA_PLATFORMTHEME=qt6ct
-export QT_QPA_PLATFORM=wayland
-export GDK_BACKEND=wayland
-export MOZ_ENABLE_WAYLAND=1
-export XDG_CURRENT_DESKTOP=Hyprland
-export XDG_SESSION_TYPE=wayland
-export XDG_SESSION_DESKTOP=Hyprland
-
-# Fcitx5 Input Method (Wayland Native)
-# Note: Modern fcitx5 on Wayland uses native protocol (text-input-v3)
-# DO NOT set GTK_IM_MODULE, QT_IM_MODULE, SDL_IM_MODULE for Wayland
-# Only set XMODIFIERS for X11/XWayland compatibility
-export XMODIFIERS=@im=fcitx
-
-# Ghostty specific
 if [[ "$TERM" == "xterm-ghostty" ]]; then
     export TERM=xterm-256color
 fi
 
-# FZF - Fuzzy Finder Integration
-if command -v fzf >/dev/null 2>&1; then
-    eval "$(fzf --bash)"
-    # Ble.sh integration for FZF
-    [[ ${BLE_VERSION-} ]] && ble-import -d integration/fzf-completion
-    [[ ${BLE_VERSION-} ]] && ble-import -d integration/fzf-key-bindings
-fi
+export PATH="$HOME/.local/bin:$PATH"
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
 
-# Zoxide - Smart Directory Navigation
+# Zoxide & FZF are highly useful on servers and generally safe over SSH.
+# We load them here, but without the ble.sh integrations.
 if command -v zoxide >/dev/null 2>&1; then
     eval "$(zoxide init bash)"
-    # Ble.sh integration for Zoxide
-    [[ ${BLE_VERSION-} ]] && ble-import -d integration/zoxide
 fi
 
-# Atuin - Intelligent Command History (Command Prediction)
-if command -v atuin >/dev/null 2>&1; then
-    eval "$(atuin init bash)"
+if command -v fzf >/dev/null 2>&1; then
+    eval "$(fzf --bash)"
 fi
 
-# Pixel Prompt
-PS1="\[\e[0;32m\][\[\e[1;37m\]\u@\h\[\e[0;32m\]]\[\e[0;37m\]:\[\e[1;34m\]\w\[\e[0m\]\$ "
+# --- LOCAL-ONLY CONFIGURATION (Skipped on SSH/VPS to prevent hangs) ---
+if [[ $is_remote_session -eq 0 ]]; then
+
+    # Desktop Environment Variables
+    export QT_QPA_PLATFORMTHEME=qt6ct
+    export QT_QPA_PLATFORM=wayland
+    export GDK_BACKEND=wayland
+    export MOZ_ENABLE_WAYLAND=1
+    export XDG_CURRENT_DESKTOP=Hyprland
+    export XDG_SESSION_TYPE=wayland
+    export XDG_SESSION_DESKTOP=Hyprland
+
+    # Fcitx5 Input Method
+    export GTK_IM_MODULE=fcitx
+    export QT_IM_MODULE=fcitx
+    export XMODIFIERS=@im=fcitx
+    export GLFW_IM_MODULE=ibus
+
+    # Pixel Prompt
+    PS1="\[\e[0;32m\][\[\e[1;37m\]\u@\h\[\e[0;32m\]]\[\e[0;37m\]:\[\e[1;34m\]\w\[\e[0m\]\$ "
+
+    # Ble.sh - Bash Line Editor
+    if [ -f /usr/share/blesh/ble.sh ]; then
+        source /usr/share/blesh/ble.sh
+        [[ ${BLE_VERSION-} ]] && ble-import -d integration/zoxide
+        [[ ${BLE_VERSION-} ]] && ble-import -d integration/fzf-completion
+        [[ ${BLE_VERSION-} ]] && ble-import -d integration/fzf-key-bindings
+    fi
+
+    # Atuin - Intelligent Command History
+    if command -v atuin >/dev/null 2>&1; then
+        eval "$(atuin init bash)"
+    fi
+
+fi
+
 # --- PIXEL-RICE END ---
 EOF
     echo -e "   ${GREEN}✓${NC} Updated .bashrc"
 else
-    echo -e "   ${YELLOW}⚠️${NC}  .bashrc already configured, checking for updates..."
-    
-    # Inject Ble.sh if missing
-    if ! grep -q "source /usr/share/blesh/ble.sh" "$BASHRC"; then
-        echo "   Adding missing Ble.sh config..."
-        # Insert at the START of the PIXEL-RICE block for correct loading order
-        sed -i '/# --- PIXEL-RICE ---/a \
-# Ble.sh - Bash Line Editor (Syntax highlighting & Autosuggestions)\n\
-if [ -f /usr/share/blesh/ble.sh ]; then\n\
-    source /usr/share/blesh/ble.sh\n\
-fi' "$BASHRC"
-    fi
-
-    # Inject missing Zoxide config if needed
-    if ! grep -q "zoxide init bash" "$BASHRC"; then
-        echo "   Adding missing Zoxide config..."
-        sed -i '/# --- PIXEL-RICE END ---/i \
-# Zoxide - Smart Directory Navigation\n\
-if command -v zoxide >/dev/null 2>&1; then\n\
-    eval "$(zoxide init bash)"\n\
-    [[ ${BLE_VERSION-} ]] && ble-import -d integration/zoxide\n\
-fi\n' "$BASHRC"
-    fi
-
-    # Inject missing FZF config if needed
-    if ! grep -q "fzf --bash" "$BASHRC"; then
-        echo "   Adding missing FZF config..."
-        sed -i '/# --- PIXEL-RICE END ---/i \
-# FZF - Fuzzy Finder Integration\n\
-if command -v fzf >/dev/null 2>&1; then\n\
-    eval "$(fzf --bash)"\n\
-    [[ ${BLE_VERSION-} ]] && ble-import -d integration/fzf-completion\n\
-    [[ ${BLE_VERSION-} ]] && ble-import -d integration/fzf-key-bindings\n\
-fi\n' "$BASHRC"
-    fi
-
-    # Inject missing Atuin config if needed
-    if ! grep -q "atuin init bash" "$BASHRC"; then
-        echo "   Adding missing Atuin config..."
-        sed -i '/# --- PIXEL-RICE END ---/i \
-# Atuin - Intelligent Command History (Command Prediction)\n\
-if command -v atuin >/dev/null 2>&1; then\n\
-    eval "$(atuin init bash)"\n\
-fi\n' "$BASHRC"
-    fi
+    echo -e "   ${YELLOW}⚠️${NC}  .bashrc already configured with PIXEL-RICE block, leaving it unchanged."
 fi
 
 # Configure fcitx5
