@@ -221,7 +221,7 @@ $AUR_HELPER -S --needed --noconfirm \
     hyprpaper \
     hyprlock \
     hypridle \
-    wlogout-bin \
+    wlogout \
     hyprpicker \
     wlsunset
 
