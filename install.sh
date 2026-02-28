@@ -251,6 +251,7 @@ $AUR_HELPER -S --needed --noconfirm \
     thunar \
     thunar-archive-plugin \
     thunar-volman \
+    gvfs \
     file-roller \
     qt6ct \
     kvantum
@@ -277,6 +278,12 @@ $AUR_HELPER -S --needed --noconfirm cursor-bin || {
 echo "   Installing notepadnext..."
 $AUR_HELPER -S --needed --noconfirm notepadnext-bin || {
     echo -e "${YELLOW}   ⚠️  notepadnext not found, using nano as fallback${NC}"
+}
+
+# Note-taking (Obsidian)
+echo "   Installing Obsidian..."
+$AUR_HELPER -S --needed --noconfirm obsidian-bin || {
+    echo -e "${YELLOW}   ⚠️  obsidian-bin not found, continuing...${NC}"
 }
 
 # Node.js, Bun and Development Tools
