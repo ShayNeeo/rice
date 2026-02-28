@@ -711,6 +711,34 @@ if [ -f "$SCRIPT_DIR/scripts/check_ssh_active.sh" ]; then
     echo -e "   ${GREEN}✓${NC} Installed check_ssh_active.sh (SSH-aware idle suspend)"
 fi
 
+if [ -f "$SCRIPT_DIR/scripts/conditional-suspend.sh" ]; then
+    cp "$SCRIPT_DIR/scripts/conditional-suspend.sh" "$HOME/.local/bin/conditional-suspend.sh"
+    chmod +x "$HOME/.local/bin/conditional-suspend.sh"
+    echo -e "   ${GREEN}✓${NC} Installed conditional-suspend.sh (idle + SSH check)"
+fi
+
+# Conditional suspend timer (polls every 2min to catch SSH drop after 15min idle)
+if [ -d "$SCRIPT_DIR/systemd/user" ]; then
+    mkdir -p "$HOME/.config/systemd/user"
+    for unit in "$SCRIPT_DIR/systemd/user"/*.service "$SCRIPT_DIR/systemd/user"/*.timer; do
+        [ -f "$unit" ] && cp "$unit" "$HOME/.config/systemd/user/" && echo -e "   ${GREEN}✓${NC} Installed $(basename "$unit")"
+    done
+    systemctl --user daemon-reload 2>/dev/null || true
+    if systemctl --user enable conditional-suspend.timer 2>/dev/null; then
+        systemctl --user start conditional-suspend.timer 2>/dev/null || true
+        echo -e "   ${GREEN}✓${NC} Enabled conditional-suspend.timer (polls every 2min)"
+    else
+        echo -e "   ${YELLOW}⚠️${NC}  Enable conditional-suspend.timer manually: systemctl --user enable --now conditional-suspend.timer"
+    fi
+fi
+
+# Polkit: allow suspend without password (for conditional-suspend from user timer)
+if [ -f "$SCRIPT_DIR/etc/polkit-1/rules.d/50-allow-suspend.rules" ]; then
+    sudo mkdir -p /etc/polkit-1/rules.d
+    sudo cp "$SCRIPT_DIR/etc/polkit-1/rules.d/50-allow-suspend.rules" /etc/polkit-1/rules.d/
+    echo -e "   ${GREEN}✓${NC} Installed polkit rule for passwordless suspend (power/wheel)"
+fi
+
 # Install SDDM Theme
 if [ -d "$SCRIPT_DIR/sddm-theme" ]; then
     echo "   Installing SDDM theme..."
@@ -949,6 +977,11 @@ echo "  • Add your monitor settings to: monitors.conf"
 echo "  • Add custom keybinds to: keybinds.conf"
 echo "  • Add autostart programs to: autostart.conf"
 echo "  • Add environment variables to: env.conf"
+echo ""
+echo -e "${BLUE}Conditional Suspend (SSH-aware):${NC}"
+echo "  • If systemctl suspend fails: ensure polkit rule installed (power/wheel group)"
+echo "  • If IdleHint never 'yes': idle 1min, run: loginctl show-session \$XDG_SESSION_ID | grep IdleHint"
+echo "  • State-file fallback handles hypridle not reporting idle to logind"
 echo ""
 echo -e "${BLUE}SDDM Theme:${NC}"
 echo "  • Custom pixel theme installed"

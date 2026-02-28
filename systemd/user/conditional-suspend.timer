@@ -1,0 +1,12 @@
+[Unit]
+Description=Poll for conditional suspend (SSH dropped after 15min idle)
+# Handles edge case: SSH disconnects after hypridle 15min timeout already passed
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=2min
+AccuracySec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,9 @@
+[Unit]
+Description=Conditional suspend check (idle + SSH)
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/conditional-suspend.sh
+
+[Install]
+WantedBy=default.target

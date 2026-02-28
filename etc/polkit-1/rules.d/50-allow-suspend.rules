@@ -1,0 +1,12 @@
+// Allow user to suspend without password (for conditional-suspend timer/service).
+// Required when systemctl suspend is run from systemd user timer.
+// Install: sudo cp etc/polkit-1/rules.d/50-allow-suspend.rules /etc/polkit-1/rules.d/
+// Ensure user is in 'power' group: sudo usermod -aG power $USER
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.login1.suspend" ||
+         action.id == "org.freedesktop.login1.suspend-multiple-sessions") &&
+        (subject.isInGroup("power") || subject.isInGroup("wheel"))) {
+        return polkit.Result.YES;
+    }
+});
