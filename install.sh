@@ -705,6 +705,12 @@ if [ -f "$SCRIPT_DIR/scripts/battery-monitor.sh" ]; then
     echo -e "   ${GREEN}✓${NC} Installed battery-monitor.sh"
 fi
 
+if [ -f "$SCRIPT_DIR/scripts/check_ssh_active.sh" ]; then
+    cp "$SCRIPT_DIR/scripts/check_ssh_active.sh" "$HOME/.local/bin/check_ssh_active.sh"
+    chmod +x "$HOME/.local/bin/check_ssh_active.sh"
+    echo -e "   ${GREEN}✓${NC} Installed check_ssh_active.sh (SSH-aware idle suspend)"
+fi
+
 # Install SDDM Theme
 if [ -d "$SCRIPT_DIR/sddm-theme" ]; then
     echo "   Installing SDDM theme..."
