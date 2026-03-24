@@ -214,7 +214,8 @@ sudo pacman -S --needed --noconfirm \
     texlive-latexextra \
     texlive-fontsextra \
     texlive-bibtexextra \
-    texlive-binextra
+    texlive-binextra \
+    texlive-langother
 
 # Hypr Ecosystem
 $AUR_HELPER -S --needed --noconfirm \
@@ -251,6 +252,8 @@ $AUR_HELPER -S --needed --noconfirm \
     thunar \
     thunar-archive-plugin \
     thunar-volman \
+    tumbler \
+    ffmpegthumbnailer \
     gvfs \
     file-roller \
     qt6ct \
@@ -269,9 +272,18 @@ $AUR_HELPER -S --needed --noconfirm zen-browser-bin || {
     $AUR_HELPER -S --needed --noconfirm firefox
 }
 
-# Code Editor (cursor)
-$AUR_HELPER -S --needed --noconfirm cursor-bin || {
-    echo -e "${YELLOW}   ⚠️  cursor-bin not found, continuing...${NC}"
+# Code Editor (OpenAI Codex)
+$AUR_HELPER -S --needed --noconfirm openai-codex-bin || {
+    echo -e "${YELLOW}   ⚠️  openai-codex-bin not found, continuing...${NC}"
+}
+
+# Developer CLIs (GitHub, Copilot)
+echo "   Installing developer CLIs: github-cli and github-copilot-cli-bin..."
+sudo pacman -S --needed --noconfirm github-cli || {
+    echo -e "${YELLOW}   WARNING: github-cli install failed, continuing...${NC}"
+}
+$AUR_HELPER -S --needed --noconfirm github-copilot-cli-bin || {
+    echo -e "${YELLOW}   WARNING: github-copilot-cli-bin install failed, continuing...${NC}"
 }
 
 # Text Editor (notepadnext)
@@ -310,7 +322,6 @@ $AUR_HELPER -S --needed --noconfirm \
     udiskie \
     tmux \
     yazi \
-    ffmpegthumbnailer \
     ueberzugpp \
     poppler \
     fd \
@@ -573,6 +584,9 @@ if [ ! -f "$HOME/.config/hypr/custom/keybinds.conf" ]; then
 #   bind = $mainMod, V, exec, pavucontrol
 #   bind = $mainMod ALT, L, exec, swaylock
 #   bind = $mainMod SHIFT, G, exec, gimp
+#
+#   # Toggle WARP ↔ NextDNS (requires warp-nextdns-toggle.sh)
+#   bind = $mainMod SHIFT, W, exec, warp-nextdns-toggle.sh
 CUSTOM_EOF
 fi
 
@@ -673,6 +687,41 @@ if [ -f "$SCRIPT_DIR/scripts/cheatsheet.sh" ]; then
     cp "$SCRIPT_DIR/scripts/cheatsheet.sh" "$HOME/.local/bin/cheatsheet.sh"
     chmod +x "$HOME/.local/bin/cheatsheet.sh"
     echo -e "   ${GREEN}✓${NC} Installed cheatsheet.sh"
+fi
+
+if [ -f "$SCRIPT_DIR/scripts/warp-nextdns-toggle.sh" ]; then
+    cp "$SCRIPT_DIR/scripts/warp-nextdns-toggle.sh" "$HOME/.local/bin/warp-nextdns-toggle.sh"
+    chmod +x "$HOME/.local/bin/warp-nextdns-toggle.sh"
+    echo -e "   ${GREEN}✓${NC} Installed warp-nextdns-toggle.sh"
+
+    echo ""
+    read -r -p "   Configure passwordless WARP/NextDNS DNS toggle (sudoers + optional NextDNS profile)? [y/N]: " WARP_DNS_SETUP
+    if [[ "$WARP_DNS_SETUP" =~ ^[Yy] ]]; then
+        # Optional NextDNS profile customization
+        echo "   Default: generic NextDNS endpoint (no profile ID)."
+        read -r -p "   Enter NextDNS profile ID to use (leave blank to keep generic): " NEXTDNS_PROFILE_ID
+        if [ -n "$NEXTDNS_PROFILE_ID" ]; then
+            sed -i "s/dns.nextdns.io/$NEXTDNS_PROFILE_ID.dns.nextdns.io/g" "$HOME/.local/bin/warp-nextdns-toggle.sh"
+            echo -e "   ${GREEN}✓${NC} Updated warp-nextdns-toggle.sh to use profile ID: $NEXTDNS_PROFILE_ID"
+        else
+            echo "   Keeping generic NextDNS endpoint (no profile ID) in warp-nextdns-toggle.sh"
+        fi
+
+        # Create sudoers drop-in to allow DNS toggle without password prompt
+        SUDOERS_FILE="/etc/sudoers.d/pixel-rice-warp-dns"
+        echo "   Adding sudoers rule for passwordless DNS toggle..."
+        sudo bash -c "cat > '$SUDOERS_FILE' <<EOF
+$(whoami) ALL=(root) NOPASSWD: /usr/bin/systemctl restart systemd-resolved, /usr/bin/sed
+EOF"
+        sudo chmod 440 "$SUDOERS_FILE" || true
+        if sudo visudo -cf "$SUDOERS_FILE" >/dev/null 2>&1; then
+            echo -e "   ${GREEN}✓${NC} Sudoers rule valid: $SUDOERS_FILE"
+        else
+            echo -e \"   ${YELLOW}⚠️${NC} visudo reported an issue with $SUDOERS_FILE. Please check it manually.\"
+        fi
+    else
+        echo "   Skipping sudoers / profile setup for warp-nextdns-toggle.sh (you can configure it later)."
+    fi
 fi
 
 if [ -f "$SCRIPT_DIR/scripts/eyeprotect.sh" ]; then

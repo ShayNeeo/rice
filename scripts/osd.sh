@@ -3,7 +3,7 @@
 # OSD Script using notify-send and swaync
 # Usage: osd.sh <type> <value_or_action>
 
-# Type: volume, brightness, power, custom
+# Type: volume, brightness, power, wlsunset, kbd_backlight, dns, custom
 TYPE="$1"
 ACTION="$2"
 
@@ -177,7 +177,21 @@ case "$TYPE" in
             -i "keyboard-brightness-symbolic" \
             "Keyboard Light" "$TEXT ($PERCENT%)"
         ;;
-        
+
+    "dns")
+        # ACTION: profile name, e.g. "WARP" or "NextDNS"
+        PROFILE="$ACTION"
+        ICON="network-vpn"
+        case "$PROFILE" in
+            "NextDNS") ICON="network-wireless" ;;
+            "WARP") ICON="network-vpn" ;;
+        esac
+
+        notify-send -h string:x-canonical-private-synchronous:sys-notify \
+            -i "$ICON" \
+            "DNS Profile" "$PROFILE"
+        ;;
+
     "custom")
         # Usage: osd.sh custom "Title" "Body" "Icon"
         TITLE="$2"

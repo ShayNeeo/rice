@@ -5,7 +5,7 @@
     "spacing": 0,
     "modules-left": ["hyprland/workspaces"],
     "modules-center": ["clock"],
-    "modules-right": ["custom/notifications", "custom/fcitx5", "network", "bluetooth", "custom/power", "pulseaudio", "cpu", "memory", "battery"],
+    "modules-right": ["custom/notifications", "custom/fcitx5", "custom/warp", "network", "bluetooth", "custom/power", "pulseaudio", "cpu", "memory", "battery"],
     
     "hyprland/workspaces": {
         "format": "{id}",
@@ -103,5 +103,14 @@
         "tooltip": false,
         "on-click": "swaync-client -t -sw",
         "on-click-right": "swaync-client -d -sw"
+    },
+
+    "custom/warp": {
+        "exec": "~/.config/waybar/scripts/warp-status.sh",
+        "interval": 2,
+        "return-type": "json",
+        "format": "{}",
+        "tooltip": false,
+        "on-click": "warp-nextdns-toggle.sh"
     }
 }
