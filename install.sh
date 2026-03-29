@@ -263,18 +263,14 @@ $AUR_HELPER -S --needed --noconfirm \
 $AUR_HELPER -S --needed --noconfirm \
     gtk-engine-murrine \
     gnome-themes-extra \
-    papirus-icon-theme
+    papirus-icon-theme \
+    gsettings-desktop-schemas
 
 # Browser (zen-browser from AUR)
 echo "   Installing zen-browser..."
 $AUR_HELPER -S --needed --noconfirm zen-browser-bin || {
     echo -e "${YELLOW}   ⚠️  zen-browser not found, trying alternatives...${NC}"
     $AUR_HELPER -S --needed --noconfirm firefox
-}
-
-# Code Editor (OpenAI Codex)
-$AUR_HELPER -S --needed --noconfirm openai-codex-bin || {
-    echo -e "${YELLOW}   ⚠️  openai-codex-bin not found, continuing...${NC}"
 }
 
 # Developer CLIs (GitHub, Copilot)
@@ -846,71 +842,90 @@ if ! grep -q "PIXEL-RICE" "$BASHRC" 2>/dev/null; then
 
 # --- PIXEL-RICE ---
 
-# --- AI AGENT & CODE EDITOR ENVIRONMENT FIX ---
-# Detect if running in an automated or code editor agent context
-is_agent_env=0
-
-[[ -n "$ANTIGRAVITY_AGENT" ]] && is_agent_env=1
-[[ -n "$AGENT_ENVIRONMENT" ]] && is_agent_env=1
-[[ -n "$CI" ]] && is_agent_env=1
-[[ "$TERM_PROGRAM" == "vscode" ]] && is_agent_env=1
-[[ "$TERM_PROGRAM" == "cursor" ]] && is_agent_env=1
-[[ "$TERM_PROGRAM" =~ (copilot|github|agent) ]] && is_agent_env=1
-[[ -n "$VSCODE_IPC_HOOK" ]] && is_agent_env=1
-[[ -n "$CURSOR_IPC_HOOK" ]] && is_agent_env=1
-[[ -n "$GITHUB_ACTIONS" ]] && is_agent_env=1
-
-if [[ $is_agent_env -eq 1 ]]; then
-    export PS1='$ '
-    unset PROMPT_COMMAND
-    export TERM=dumb
-    export CLICOLOR=0
-    export NO_COLOR=1
-    set +H
-    [ -f "$HOME/.agent_profile" ] && source "$HOME/.agent_profile"
+# Guard against accidental double-sourcing in the same shell process.
+if [[ -n "${__PIXEL_BASHRC_GUARD:-}" ]]; then
     return
 fi
-# --- END CODE EDITOR AGENT FIX ---
+__PIXEL_BASHRC_GUARD=1
 
-# If not running interactively, don't do anything
+# --- AI / CI / editor agents (minimal shell; no ble/atuin — avoids hangs) ---
+is_agent_env=0
+[[ -n "${ANTIGRAVITY_AGENT:-}" ]] && is_agent_env=1
+[[ -n "${AGENT_ENVIRONMENT:-}" ]] && is_agent_env=1
+[[ -n "${CI:-}" ]] && is_agent_env=1
+[[ "${TERM_PROGRAM:-}" == "vscode" ]] && is_agent_env=1
+[[ "${TERM_PROGRAM:-}" == "cursor" ]] && is_agent_env=1
+[[ "${TERM_PROGRAM:-}" =~ (copilot|github|agent) ]] && is_agent_env=1
+[[ -n "${VSCODE_IPC_HOOK:-}" ]] && is_agent_env=1
+[[ -n "${CURSOR_IPC_HOOK:-}" ]] && is_agent_env=1
+[[ -n "${GITHUB_ACTIONS:-}" ]] && is_agent_env=1
+
+if [[ "$is_agent_env" -eq 1 ]]; then
+    unset PROMPT_COMMAND
+    [[ -z "${TERM:-}" || "$TERM" == "dumb" ]] && export TERM=xterm-256color
+    unset NO_COLOR
+    export CLICOLOR=1
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    export PS1='\[\e[0;32m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ '
+    set +H
+    [[ -f "$HOME/.agent_profile" ]] && source "$HOME/.agent_profile"
+    return
+fi
+
+# Non-interactive (scripts, scp): no prompt, no keybindings
 [[ $- != *i* ]] && return
 
-# --- SESSION DETECTION ---
-# Detect if we are logged in remotely via SSH (Termius, etc.)
+# --- Session: local desktop vs SSH ---
 is_remote_session=0
-if [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" || -n "$SSH_CONNECTION" ]]; then
-    is_remote_session=1
-fi
+[[ -n "${SSH_CLIENT:-}" || -n "${SSH_TTY:-}" || -n "${SSH_CONNECTION:-}" ]] && is_remote_session=1
 
-# --- GLOBAL CONFIGURATION (Runs Locally and Remotely) ---
+# --- History (readline; atuin may add its own when loaded) ---
+shopt -s histappend
+HISTCONTROL="ignoreboth:erasedups"
+HISTSIZE=50000
+HISTFILESIZE=100000
+HISTIGNORE="&:ls:ll:la:cd:exit:clear:history"
+
+# --- Defaults ---
+umask 022
+if [[ -z "${EDITOR:-}" ]]; then
+    command -v nvim >/dev/null && export EDITOR=nvim
+    [[ -z "${EDITOR:-}" ]] && command -v vim >/dev/null && export EDITOR=vim
+    [[ -z "${EDITOR:-}" ]] && command -v nano >/dev/null && export EDITOR=nano
+fi
+[[ -z "${VISUAL:-}" && -n "${EDITOR:-}" ]] && export VISUAL="$EDITOR"
+export LESS="-R -F -X"
+
+# --- Colors & PATH ---
 alias ls='ls --color=auto'
 alias grep='grep --color=auto'
-
-# Basic prompt fallback for remote sessions
-PS1='[\u@\h \W]\$ '
-
-if [[ "$TERM" == "xterm-ghostty" ]]; then
-    export TERM=xterm-256color
-fi
+alias ll='ls -alh --color=auto'
+alias la='ls -A --color=auto'
 
 export PATH="$HOME/.local/bin:$PATH"
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
+[[ -d "$HOME/.bun/bin" ]] && {
+    export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
+    export PATH="$BUN_INSTALL/bin:$PATH"
+}
 
-# Zoxide & FZF are highly useful on servers and generally safe over SSH.
-# We load them here, but without the ble.sh integrations.
+# Ghostty reports xterm-ghostty; many TUI expect xterm-256color for colors
+[[ "${TERM:-}" == "xterm-ghostty" ]] && export TERM=xterm-256color
+
+# GnuPG pinentry on the current tty (interactive)
+command -v gpg >/dev/null 2>&1 && export GPG_TTY="${GPG_TTY:-$(tty 2>/dev/null)}"
+
+# Fallback prompt (SSH or before ble); overwritten locally after ble loads
+PS1='[\[\e[0;32m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\W\[\e[0m\]]\$ '
+
+# Zoxide must run before ble (ble-import integration/zoxide). Do NOT run fzf --bash here:
+# it hooks PROMPT_COMMAND and often causes a double prompt line with ble + Ghostty.
 if command -v zoxide >/dev/null 2>&1; then
     eval "$(zoxide init bash)"
 fi
 
-if command -v fzf >/dev/null 2>&1; then
-    eval "$(fzf --bash)"
-fi
-
-# --- LOCAL-ONLY CONFIGURATION (Skipped on SSH/VPS to prevent hangs) ---
-if [[ $is_remote_session -eq 0 ]]; then
-
-    # Desktop Environment Variables
+# --- Hyprland / Wayland desktop only (skip SSH to avoid broken GTK/Qt over forwarded sessions) ---
+if [[ "$is_remote_session" -eq 0 ]]; then
     export QT_QPA_PLATFORMTHEME=qt6ct
     export QT_QPA_PLATFORM=wayland
     export GDK_BACKEND=wayland
@@ -918,29 +933,68 @@ if [[ $is_remote_session -eq 0 ]]; then
     export XDG_CURRENT_DESKTOP=Hyprland
     export XDG_SESSION_TYPE=wayland
     export XDG_SESSION_DESKTOP=Hyprland
+    export GTK_THEME=Adwaita:dark
+    export GDK_THEME=Adwaita-dark
 
-    # Fcitx5 Input Method
     export GTK_IM_MODULE=fcitx
     export QT_IM_MODULE=fcitx
     export XMODIFIERS=@im=fcitx
     export GLFW_IM_MODULE=ibus
 
-    # Pixel Prompt
-    PS1="\[\e[0;32m\][\[\e[1;37m\]\u@\h\[\e[0;32m\]]\[\e[0;37m\]:\[\e[1;34m\]\w\[\e[0m\]\$ "
-
-    # Ble.sh - Bash Line Editor
-    if [ -f /usr/share/blesh/ble.sh ]; then
+    # ble → PS1 → atuin → fzf (fzf last: avoids double prompt on Ghostty / some terminals)
+    if [[ -f /usr/share/blesh/ble.sh ]]; then
         source /usr/share/blesh/ble.sh
-        [[ ${BLE_VERSION-} ]] && ble-import -d integration/zoxide
-        [[ ${BLE_VERSION-} ]] && ble-import -d integration/fzf-completion
-        [[ ${BLE_VERSION-} ]] && ble-import -d integration/fzf-key-bindings
+        [[ -n "${BLE_VERSION:-}" ]] && ble-import -d integration/zoxide
+        [[ -n "${BLE_VERSION:-}" ]] && ble-import -d integration/fzf-completion
+        [[ -n "${BLE_VERSION:-}" ]] && ble-import -d integration/fzf-key-bindings
     fi
 
-    # Atuin - Intelligent Command History
+    PS1="\[\e[0;32m\][\[\e[1;37m\]\u@\h\[\e[0;32m\]]\[\e[0;37m\]:\[\e[1;34m\]\w\[\e[0m\]\$ "
+
     if command -v atuin >/dev/null 2>&1; then
         eval "$(atuin init bash)"
     fi
 
+    if command -v fzf >/dev/null 2>&1 && [[ -z "${BLE_VERSION:-}" ]]; then
+        eval "$(fzf --bash)"
+    fi
+fi
+
+# SSH: no ble/atuin; still get fzf keybindings
+if [[ "$is_remote_session" -eq 1 ]] && command -v fzf >/dev/null 2>&1; then
+    eval "$(fzf --bash)"
+fi
+
+# Ghostty sometimes injects a prompt hook that can duplicate prompt lines
+# when combined with ble/atuin/fzf stacks. Keep title/zoxide hooks, drop ghostty hook.
+if [[ "${TERM_PROGRAM:-}" == "ghostty" ]]; then
+    __pixel_strip_ghostty_hook() {
+        local _pc_decl _pc
+        _pc_decl="$(declare -p PROMPT_COMMAND 2>/dev/null || true)"
+        if [[ "$_pc_decl" == "declare -a "* ]]; then
+            local _pc_new=()
+            for _pc in "${PROMPT_COMMAND[@]}"; do
+                [[ "$_pc" == *"__ghostty_hook"* ]] && continue
+                _pc_new+=("$_pc")
+            done
+            PROMPT_COMMAND=("${_pc_new[@]}")
+            unset _pc_new
+        elif [[ "${PROMPT_COMMAND:-}" == *"__ghostty_hook"* ]]; then
+            PROMPT_COMMAND=""
+        fi
+        unset _pc_decl _pc
+    }
+
+    # Remove once immediately...
+    __pixel_strip_ghostty_hook
+    # ...and keep stripping on every prompt in case Ghostty re-injects it.
+    if [[ "$(declare -p PROMPT_COMMAND 2>/dev/null || true)" == "declare -a "* ]]; then
+        PROMPT_COMMAND+=("__pixel_strip_ghostty_hook")
+    elif [[ -n "${PROMPT_COMMAND:-}" ]]; then
+        PROMPT_COMMAND="${PROMPT_COMMAND};__pixel_strip_ghostty_hook"
+    else
+        PROMPT_COMMAND="__pixel_strip_ghostty_hook"
+    fi
 fi
 
 # --- PIXEL-RICE END ---

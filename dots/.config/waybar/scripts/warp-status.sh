@@ -26,19 +26,18 @@ state=$(get_warp_state)
 
 case "$state" in
     connected)
-        echo '{"text":"WARP","class":"connected"}'
+        printf '%s\n' '{"text":"  WARP","class":"connected"}'
         ;;
     connecting)
-        echo '{"text":"W..","class":"connecting"}'
+        printf '%s\n' '{"text":"  ...","class":"connecting"}'
         ;;
     unable)
-        echo '{"text":"ERR","class":"error"}'
+        printf '%s\n' '{"text":"  ERR","class":"error"}'
         ;;
     missing)
-        echo '{"text":"N/A","class":"disabled"}'
+        printf '%s\n' '{"text":"  N/A","class":"disabled"}'
         ;;
     *)
-        echo '{"text":"SYS","class":"idle"}'
+        printf '%s\n' '{"text":"  SYS","class":"idle"}'
         ;;
 esac
-

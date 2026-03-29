@@ -48,6 +48,7 @@ palette = 7=#F2E9E9
 palette = 15=#FFFFFF
 
 # Performance optimizations
+shell-integration = none
 shell-integration-features = no-cursor
 clipboard-trim-trailing-spaces = true
 

@@ -1,17 +1,31 @@
 {
     "layer": "top",
     "position": "top",
-    "height": 30,
-    "spacing": 0,
+    "height": 36,
+    "spacing": 6,
     "modules-left": ["hyprland/workspaces"],
     "modules-center": ["clock"],
     "modules-right": ["custom/notifications", "custom/fcitx5", "custom/warp", "network", "bluetooth", "custom/power", "pulseaudio", "cpu", "memory", "battery"],
-    
+
     "hyprland/workspaces": {
-        "format": "{id}",
+        "format": "{icon}",
         "on-click": "activate",
+        "on-scroll-up": "hyprctl dispatch workspace e+1",
+        "on-scroll-down": "hyprctl dispatch workspace e-1",
         "all-outputs": true,
         "sort-by-number": true,
+        "format-icons": {
+            "active": "",
+            "visible": "",
+            "default": "",
+            "empty": "",
+            "urgent": "",
+            "1": "",
+            "2": "",
+            "3": "",
+            "4": "",
+            "5": ""
+        },
         "persistent-workspaces": {
             "1": [],
             "2": [],
@@ -20,87 +34,103 @@
             "5": []
         }
     },
-    
+
     "clock": {
         "interval": 1,
-        "format": "{:%H:%M:%S}",
-        "format-alt": "{:%Y-%m-%d}",
-        "tooltip": false
+        "format": "  {:%H:%M:%S}",
+        "format-alt": "  {:%Y-%m-%d}",
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
     },
-    
+
     "network": {
         "interval": 3,
-        "format-wifi": "NET:{signalStrength}%",
-        "format-ethernet": "NET:OK",
-        "format-disconnected": "NET:--",
-        "tooltip": false,
+        "format-wifi": "  {signalStrength}%",
+        "format-ethernet": "  {ipaddr}",
+        "format-disconnected": "  ",
+        "tooltip-format": "{ifname}\n{essid} {signalStrength}%\n{ipaddr}/{cidr}\n{gwaddr}",
         "on-click": "nm-connection-editor"
     },
-    
+
     "bluetooth": {
         "interval": 3,
-        "format": "BT:{status}",
-        "format-disabled": "BT:OFF",
-        "format-connected": "BT:{num_connections}",
-        "tooltip": false,
+        "format": "  {status}",
+        "format-disabled": "  off",
+        "format-connected": "  {num_connections}",
+        "tooltip-format": "{status}",
+        "tooltip-format-connected": "{num_connections} device(s)\n{device_enumerate}",
+        "tooltip-format-enumerate-connected": "{device_alias}",
         "on-click": "blueman-manager"
     },
-    
+
     "custom/power": {
         "exec": "powerprofilesctl get | cut -c1-4 | tr '[:lower:]' '[:upper:]'",
         "interval": 5,
-        "format": "PWR:{}",
-        "tooltip": false,
+        "format": "  {}",
+        "tooltip-format": "Power profile (click: balanced)",
         "on-click": "powerprofilesctl set balanced"
     },
-    
+
     "pulseaudio": {
         "interval": 1,
-        "format": "VOL:{volume}%",
-        "format-muted": "VOL:--",
+        "format": "{icon} {volume}%",
+        "format-muted": "  --",
+        "format-bluetooth": "{icon} {volume}% ",
+        "format-bluetooth-muted": "  ",
+        "tooltip-format": "{volume}%",
         "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
         "on-click-right": "pavucontrol",
-        "tooltip": false
+        "format-icons": {
+            "headphone": "",
+            "hands-free": "",
+            "headset": "",
+            "phone": "",
+            "portable": "",
+            "car": "",
+            "default": ["", "", ""]
+        }
     },
-    
+
     "cpu": {
         "interval": 2,
-        "format": "CPU:{usage}%",
-        "tooltip": false
+        "format": "  {usage}%",
+        "tooltip-format": "CPU load: {usage}%"
     },
-    
+
     "memory": {
         "interval": 2,
-        "format": "RAM:{percentage}%",
-        "tooltip": false
+        "format": "  {percentage}%",
+        "tooltip-format": "{used} / {total} ({percentage}%)"
     },
-    
+
     "battery": {
         "interval": 10,
         "states": {
             "warning": 30,
             "critical": 15
         },
-        "format": "BAT:{capacity}%",
-        "format-charging": "CHG:{capacity}%",
-        "format-full": "FULL",
-        "tooltip": false
+        "format": "{icon} {capacity}%",
+        "format-charging": "  {capacity}%",
+        "format-plugged": "  {capacity}%",
+        "format-full": "  {capacity}%",
+        "format-alt": "{time} {icon}",
+        "format-icons": ["", "", "", "", ""],
+        "tooltip-format": "{capacity}% • {time}"
     },
-    
+
     "custom/fcitx5": {
         "exec": "~/.config/waybar/scripts/fcitx5-status.sh",
         "interval": 1,
-        "format": "IM:{}",
-        "tooltip": false,
+        "format": "  {}",
+        "tooltip-format": "fcitx5 • click to toggle IM",
         "on-click": "fcitx5-remote -t"
     },
-    
+
     "custom/notifications": {
         "exec": "~/.config/waybar/scripts/swaync-status.sh",
         "interval": 1,
         "return-type": "json",
         "format": "{}",
-        "tooltip": false,
+        "tooltip-format": "Notifications / SwayNC",
         "on-click": "swaync-client -t -sw",
         "on-click-right": "swaync-client -d -sw"
     },
@@ -110,7 +140,7 @@
         "interval": 2,
         "return-type": "json",
         "format": "{}",
-        "tooltip": false,
+        "tooltip-format": "Cloudflare WARP / NextDNS toggle",
         "on-click": "warp-nextdns-toggle.sh"
     }
 }

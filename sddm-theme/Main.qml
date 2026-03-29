@@ -6,9 +6,8 @@ Rectangle {
     id: root
     width: Screen.width
     height: Screen.height
-    color: "#2D2D2D"
+    color: "#151621"
 
-    // Background Image
     Image {
         anchors.fill: parent
         source: "background.png"
@@ -16,17 +15,23 @@ Rectangle {
         smooth: false
     }
 
-    // Clock
+    // Dim overlay — cartoon panel separation from wallpaper
+    Rectangle {
+        anchors.fill: parent
+        color: "#151621"
+        opacity: 0.35
+    }
+
     Text {
         anchors.top: parent.top
-        anchors.topMargin: 60
+        anchors.topMargin: 56
         anchors.horizontalCenter: parent.horizontalCenter
         text: Qt.formatTime(new Date(), "HH:mm:ss")
-        font.family: "Terminus"
-        font.pixelSize: 48
+        font.family: "JetBrains Mono"
+        font.pixelSize: 44
         font.bold: true
-        color: "#D9895B"
-        
+        color: "#4fd6ff"
+
         Timer {
             interval: 1000
             running: true
@@ -35,26 +40,25 @@ Rectangle {
         }
     }
 
-    // Date
     Text {
         anchors.top: parent.top
-        anchors.topMargin: 120
+        anchors.topMargin: 112
         anchors.horizontalCenter: parent.horizontalCenter
         text: Qt.formatDate(new Date(), "dddd, MMMM dd, yyyy")
-        font.family: "Terminus"
-        font.pixelSize: 16
+        font.family: "JetBrains Mono"
+        font.pixelSize: 15
         font.bold: true
-        color: "#46658C"
+        color: "#a0a2b8"
     }
 
-    // Login Box
     Rectangle {
         id: loginBox
         anchors.centerIn: parent
         width: 400
         height: 300
-        color: "#3A3A3A"
-        border.color: "#46658C"
+        radius: 6
+        color: "#1e2030"
+        border.color: "#4fd6ff"
         border.width: 2
 
         Column {
@@ -62,37 +66,36 @@ Rectangle {
             spacing: 20
             width: parent.width - 60
 
-            // Title
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: "PIXEL RICE"
-                font.family: "Terminus"
-                font.pixelSize: 18
+                font.family: "JetBrains Mono"
+                font.pixelSize: 17
                 font.bold: true
-                color: "#46658C"
+                color: "#ffcc66"
             }
 
-            // Username
             Rectangle {
                 width: parent.width
                 height: 40
-                color: "#2D2D2D"
-                border.color: usernameInput.activeFocus ? "#D9895B" : "#46658C"
+                radius: 6
+                color: "#151621"
+                border.color: usernameInput.activeFocus ? "#4fd6ff" : "#2a2c3c"
                 border.width: 2
 
                 TextInput {
                     id: usernameInput
                     anchors.fill: parent
                     anchors.margins: 10
-                    font.family: "Terminus"
-                    font.pixelSize: 14
-                    color: "#F2E9E9"
-                    selectionColor: "#46658C"
-                    selectedTextColor: "#F2E9E9"
+                    font.family: "JetBrains Mono"
+                    font.pixelSize: 13
+                    color: "#e0e2f0"
+                    selectionColor: "#4fd6ff"
+                    selectedTextColor: "#151621"
                     text: userModel.lastUser
                     verticalAlignment: TextInput.AlignVCenter
                     focus: true
-                    
+
                     Keys.onPressed: {
                         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                             passwordInput.forceActiveFocus()
@@ -102,26 +105,26 @@ Rectangle {
                 }
             }
 
-            // Password
             Rectangle {
                 width: parent.width
                 height: 40
-                color: "#2D2D2D"
-                border.color: passwordInput.activeFocus ? "#D9895B" : "#46658C"
+                radius: 6
+                color: "#151621"
+                border.color: passwordInput.activeFocus ? "#4fd6ff" : "#2a2c3c"
                 border.width: 2
 
                 TextInput {
                     id: passwordInput
                     anchors.fill: parent
                     anchors.margins: 10
-                    font.family: "Terminus"
-                    font.pixelSize: 14
-                    color: "#F2E9E9"
+                    font.family: "JetBrains Mono"
+                    font.pixelSize: 13
+                    color: "#e0e2f0"
                     echoMode: TextInput.Password
-                    selectionColor: "#46658C"
-                    selectedTextColor: "#F2E9E9"
+                    selectionColor: "#4fd6ff"
+                    selectedTextColor: "#151621"
                     verticalAlignment: TextInput.AlignVCenter
-                    
+
                     Keys.onPressed: {
                         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                             loginAction()
@@ -131,7 +134,6 @@ Rectangle {
                 }
             }
 
-            // Session Dropdown - Simplified
             Row {
                 width: parent.width
                 height: 40
@@ -141,26 +143,27 @@ Rectangle {
                     width: 80
                     height: parent.height
                     text: "Session:"
-                    font.family: "Terminus"
-                    font.pixelSize: 14
-                    color: "#F2E9E9"
+                    font.family: "JetBrains Mono"
+                    font.pixelSize: 13
+                    color: "#e0e2f0"
                     verticalAlignment: Text.AlignVCenter
                 }
 
                 Rectangle {
                     width: parent.width - 90
                     height: parent.height
-                    color: "#4A4A4A"
-                    border.color: "#D9895B"
+                    radius: 6
+                    color: "#26283a"
+                    border.color: "#ffcc66"
                     border.width: 1
 
                     Text {
                         anchors.fill: parent
                         anchors.leftMargin: 10
                         text: sessionModel.data(sessionModel.index(sessionComboIndex, 0), Qt.DisplayRole) || "Hyprland"
-                        font.family: "Terminus"
-                        font.pixelSize: 14
-                        color: "#F2E9E9"
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: 13
+                        color: "#e0e2f0"
                         verticalAlignment: Text.AlignVCenter
                     }
 
@@ -169,7 +172,6 @@ Rectangle {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            // Cycle through sessions
                             var newIndex = (parent.sessionComboIndex + 1) % sessionModel.rowCount()
                             parent.sessionComboIndex = newIndex
                         }
@@ -177,21 +179,21 @@ Rectangle {
                 }
             }
 
-            // Login Button
             Rectangle {
                 width: parent.width
                 height: 45
-                color: loginMouseArea.pressed ? "#D9895B" : (loginMouseArea.containsMouse ? "#5A7FA8" : "#46658C")
-                border.color: "#46658C"
-                border.width: 1
+                radius: 6
+                color: loginMouseArea.pressed ? "#4fd6ff" : (loginMouseArea.containsMouse ? "#26283a" : "#1e2030")
+                border.color: "#4fd6ff"
+                border.width: 2
 
                 Text {
                     anchors.centerIn: parent
                     text: "LOGIN"
-                    font.family: "Terminus"
+                    font.family: "JetBrains Mono"
                     font.pixelSize: 14
                     font.bold: true
-                    color: "#F2E9E9"
+                    color: loginMouseArea.pressed ? "#151621" : "#e0e2f0"
                 }
 
                 MouseArea {
@@ -202,42 +204,41 @@ Rectangle {
                 }
             }
 
-            // Error Message
             Text {
                 id: errorText
                 width: parent.width
                 height: 20
                 text: ""
-                font.family: "Terminus"
+                font.family: "JetBrains Mono"
                 font.pixelSize: 12
-                color: "#D9895B"
+                color: "#ff6b6b"
                 horizontalAlignment: Text.AlignHCenter
                 visible: text !== ""
             }
         }
     }
 
-    // Power Buttons
     Row {
         anchors.bottom: parent.bottom
         anchors.right: parent.right
         anchors.margins: 30
-        spacing: 15
+        spacing: 12
 
-        // Reboot
         Rectangle {
-            width: 50
-            height: 50
-            color: rebootMouseArea.pressed ? "#D9895B" : (rebootMouseArea.containsMouse ? "#E5A174" : "#BFADA8")
-            border.color: "#BFADA8"
+            width: 52
+            height: 52
+            radius: 6
+            color: rebootMouseArea.pressed ? "#4fd6ff" : (rebootMouseArea.containsMouse ? "#26283a" : "#1e2030")
+            border.color: "#2a2c3c"
             border.width: 2
 
             Text {
                 anchors.centerIn: parent
-                text: "⟳"
-                font.pixelSize: 24
+                text: "\u21bb"
+                font.pixelSize: 26
                 font.bold: true
-                color: "#2D2D2D"
+                font.family: "JetBrains Mono"
+                color: rebootMouseArea.pressed ? "#151621" : "#ffcc66"
             }
 
             MouseArea {
@@ -248,20 +249,21 @@ Rectangle {
             }
         }
 
-        // Shutdown
         Rectangle {
-            width: 50
-            height: 50
-            color: shutdownMouseArea.pressed ? "#D9895B" : (shutdownMouseArea.containsMouse ? "#E5A174" : "#BFADA8")
-            border.color: "#BFADA8"
+            width: 52
+            height: 52
+            radius: 6
+            color: shutdownMouseArea.pressed ? "#ff6b6b" : (shutdownMouseArea.containsMouse ? "#26283a" : "#1e2030")
+            border.color: "#2a2c3c"
             border.width: 2
 
             Text {
                 anchors.centerIn: parent
-                text: "⏻"
+                text: "\u23fc"
                 font.pixelSize: 24
                 font.bold: true
-                color: "#2D2D2D"
+                font.family: "JetBrains Mono"
+                color: shutdownMouseArea.pressed ? "#151621" : "#e0e2f0"
             }
 
             MouseArea {
@@ -273,7 +275,6 @@ Rectangle {
         }
     }
 
-    // Error Clear Timer
     Timer {
         id: errorTimer
         interval: 3000
@@ -281,7 +282,6 @@ Rectangle {
         onTriggered: errorText.text = ""
     }
 
-    // Functions
     function loginAction() {
         var sessionIndex = loginBox.children[0].children[3].children[1].sessionComboIndex
         sddm.login(usernameInput.text, passwordInput.text, sessionIndex)
