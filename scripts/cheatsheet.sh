@@ -6,8 +6,8 @@ set -euo pipefail
 
 HYPR="${HOME}/.config/hypr"
 CACHE_DIR="${XDG_CACHE_HOME:-${HOME}/.cache}/pixel-rice"
-CACHE_FILE="${CACHE_DIR}/cheatsheet_v3.cache"
-MTIME_FILE="${CACHE_DIR}/cheatsheet_v3.mtime"
+CACHE_FILE="${CACHE_DIR}/cheatsheet_v4.cache"
+MTIME_FILE="${CACHE_DIR}/cheatsheet_v4.mtime"
 
 collect_sources() {
     local f
@@ -44,7 +44,7 @@ build_lines() {
         [[ -f "$f" ]] && files+=("$f")
     done < <(collect_sources | sort -u)
     ((${#files[@]})) || return 1
-    awk -f /dev/stdin "${files[@]}" <<'AWKEOF' | LC_ALL=C sort -t "$(printf '\t')" -k2,2 -f | awk -F '\t' '{ printf "%s  %-44s  %s\n", $1, $2, $3 }'
+    awk -f /dev/stdin "${files[@]}" <<'AWKEOF' | awk -F '\t' 'NF >= 3 && !seen[$2 "\t" $3]++' | LC_ALL=C sort -t "$(printf '\t')" -k2,2 -f | awk -F '\t' '{ printf "%s  %-44s  %s\n", $1, $2, $3 }'
 function trim(s) {
     sub(/^[ \t]+/, "", s)
     sub(/[ \t]+$/, "", s)
@@ -136,6 +136,10 @@ function pretty_keys(mod, key,    m, k) {
     m = trim(mod)
     k = trim(key)
     gsub(/\$mainMod/, "Super", m)
+    # Hypr allows Super+Shift,; normalize so duplicate lines merge in cheatsheet
+    gsub(/Super\+Shift/, "Super Shift", m)
+    gsub(/Super\+CTRL/, "Super Ctrl", m)
+    gsub(/Super\+ALT/, "Super Alt", m)
     gsub(/slash/, "/", k)
     gsub(/grave/, "`", k)
     gsub(/Backspace/, "⌫", k)

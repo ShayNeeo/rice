@@ -45,6 +45,7 @@ listview {
     scrollbar: false;
 }
 
+/* Text only — Rofi otherwise reserves element-icon and treats column 1 as an image path (white box). */
 element {
     padding: 10px 12px;
     border-radius: 6px;
@@ -52,6 +53,11 @@ element {
     border-color: #2a2c3c;
     background-color: #1e2030;
     text-color: #e0e2f0;
+    children: [ element-text ];
+}
+
+element-icon {
+    size: 0px;
 }
 
 element selected {
