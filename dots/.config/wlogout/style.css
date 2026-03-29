@@ -1,32 +1,33 @@
-/* Pixel-Perfect Ocean Sorbet wlogout theme */
+/* wlogout — cartoon-shell (Hyprland session) */
 
 * {
     background-image: none;
-    font-family: "Terminus", monospace;
-    font-size: 14px;
-    font-weight: bold;
+    font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", monospace;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 window {
-    background-color: rgba(45, 45, 45, 0.95);
+    background-color: rgba(21, 22, 33, 0.94);
 }
 
 button {
-    background-color: #3A3A3A;
-    border: 2px solid #46658C;
-    color: #F2E9E9;
+    background-color: #1e2030;
+    border: 2px solid #2a2c3c;
+    color: #e0e2f0;
     margin: 10px;
     background-repeat: no-repeat;
     background-position: center;
     background-size: 25%;
-    border-radius: 0;
+    border-radius: 6px;
     min-width: 150px;
     min-height: 150px;
 }
 
 button:focus, button:active, button:hover {
-    background-color: #46658C;
-    border: 2px solid #D9895B;
+    background-color: #26283a;
+    border: 2px solid #4fd6ff;
+    color: #4fd6ff;
     outline-style: none;
 }
 

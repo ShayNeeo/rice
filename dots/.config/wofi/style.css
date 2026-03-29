@@ -1,36 +1,42 @@
-/* Wofi - Pixel-Perfect Ocean Sorbet */
+/* Wofi — Cartoon-shell (matches Waybar panel) */
+
 window {
     margin: 0px;
-    border: 2px solid #46658C;  /* Ocean blue border */
-    background-color: #2D2D2D;
-    font-family: "Terminus", "Terminus (TTF)", monospace;
-    font-size: 13px;
-    font-weight: bold;
+    border: 2px solid #2a2c3c;
+    border-radius: 6px;
+    background-color: #151621;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+    font-family: "JetBrainsMono Nerd Font", "JetBrains Mono", "Terminus", monospace;
+    font-size: 12px;
+    font-weight: 600;
 }
 
 #input {
-    background-color: #3A3A3A;
-    color: #F2E9E9;
-    border: 1px solid #46658C;
-    padding: 8px 12px;
-    margin: 8px;
+    background-color: #1e2030;
+    color: #e0e2f0;
+    border: 2px solid #4fd6ff;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 10px;
     outline: none;
+    caret-color: #4fd6ff;
 }
 
 #input:focus {
-    border: 1px solid #D9895B;  /* Coral focus */
+    border-color: #ffcc66;
+    background-color: #26283a;
 }
 
 #inner-box {
-    margin: 8px;
+    margin: 4px 10px 10px 10px;
     padding: 0;
-    background-color: #2D2D2D;
+    background-color: #151621;
 }
 
 #outer-box {
     margin: 0px;
     padding: 0;
-    background-color: #2D2D2D;
+    background-color: #151621;
 }
 
 #scroll {
@@ -39,25 +45,32 @@ window {
 }
 
 #entry {
-    padding: 6px 12px;
-    margin: 2px;
-    background-color: transparent;
-    color: #F2E9E9;
-    border: 1px solid transparent;
+    padding: 8px 12px;
+    margin: 3px 0px;
+    border-radius: 6px;
+    background-color: #1e2030;
+    color: #e0e2f0;
+    border: 1px solid #2a2c3c;
 }
 
 #entry:hover {
-    background-color: #3A3A3A;
-    border: 1px solid #BFADA8;
+    background-color: #26283a;
+    border-color: #3d4058;
+    color: #e0e2f0;
 }
 
 #entry:selected {
-    background-color: #46658C;  /* Ocean Blue */
-    color: #F2E9E9;
-    border: 1px solid #46658C;
+    background-color: #26283a;
+    color: #4fd6ff;
+    border: 1px solid #4fd6ff;
 }
 
 #text {
     padding: 0;
     margin: 0;
+}
+
+img {
+    /* app icons when allow_images=true */
+    margin-right: 8px;
 }

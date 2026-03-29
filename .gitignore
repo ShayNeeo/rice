@@ -31,3 +31,4 @@ Thumbs.db
 src/
 pkg/
 *.pkg.tar*
+.agents

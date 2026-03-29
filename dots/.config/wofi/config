@@ -1,8 +1,8 @@
 mode=drun
 show=drun
-width=500
-height=400
-prompt=RUN
-allow_images=false
+width=620
+height=420
+prompt=Apps
+allow_images=true
 insensitive=true
 columns=1
