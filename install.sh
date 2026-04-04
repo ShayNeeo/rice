@@ -206,8 +206,14 @@ $AUR_HELPER -S --needed --noconfirm \
     noto-fonts-emoji \
     noto-fonts-cjk
 
+# Extra fonts (AUR): EB Garamond, WPS and Microsoft compatibility fonts
+$AUR_HELPER -S --needed --noconfirm \
+    ebgaramond-otf \
+    ttf-wps-fonts \
+    ttf-ms-fonts
+
 # LaTeX Support (User Request)
-echo "   Installing LaTeX packages (TexLive)..."
+echo "   Installing LaTeX/XeLaTeX packages (TexLive)..."
 sudo pacman -S --needed --noconfirm \
     texlive-bin \
     texlive-basic \
@@ -266,12 +272,30 @@ $AUR_HELPER -S --needed --noconfirm \
     papirus-icon-theme \
     gsettings-desktop-schemas
 
-# Browser (zen-browser from AUR)
-echo "   Installing zen-browser..."
-$AUR_HELPER -S --needed --noconfirm zen-browser-bin || {
-    echo -e "${YELLOW}   ⚠️  zen-browser not found, trying alternatives...${NC}"
-    $AUR_HELPER -S --needed --noconfirm firefox
-}
+# Browser (optional: Thorium AVX2 vs Zen)
+CHOSEN_BROWSER_BIN=""
+echo ""
+read -r -p "   Choose web browser: [T]horium (thorium-browser-avx2-bin) / [Z]en (zen-browser-bin, default): " BROWSER_CHOICE
+case "${BROWSER_CHOICE:-Z}" in
+    [Tt])
+        echo "   Installing thorium-browser-avx2-bin..."
+        if $AUR_HELPER -S --needed --noconfirm thorium-browser-avx2-bin; then
+            CHOSEN_BROWSER_BIN="thorium-browser"
+        else
+            echo -e "${YELLOW}   ⚠️  thorium-browser-avx2-bin install failed, falling back to Firefox${NC}"
+            sudo pacman -S --needed --noconfirm firefox && CHOSEN_BROWSER_BIN="firefox"
+        fi
+        ;;
+    *)
+        echo "   Installing zen-browser-bin..."
+        if $AUR_HELPER -S --needed --noconfirm zen-browser-bin; then
+            CHOSEN_BROWSER_BIN="zen-browser"
+        else
+            echo -e "${YELLOW}   ⚠️  zen-browser-bin not found, trying Firefox...${NC}"
+            sudo pacman -S --needed --noconfirm firefox && CHOSEN_BROWSER_BIN="firefox"
+        fi
+        ;;
+esac
 
 # Developer CLIs (GitHub, Copilot)
 echo "   Installing developer CLIs: github-cli and github-copilot-cli-bin..."
@@ -293,6 +317,70 @@ echo "   Installing Obsidian..."
 $AUR_HELPER -S --needed --noconfirm obsidian-bin || {
     echo -e "${YELLOW}   ⚠️  obsidian-bin not found, continuing...${NC}"
 }
+
+# Optional: Office suite (LibreOffice or WPS 365)
+echo ""
+read -r -p "   Choose office suite: [L]ibreOffice fresh / [W]PS Office 365 / [N]one (default N): " OFFICE_SUITE
+if [[ "$OFFICE_SUITE" =~ ^[Ll]$ ]]; then
+    echo "   Installing LibreOffice Fresh..."
+    sudo pacman -S --needed --noconfirm libreoffice-fresh || {
+        echo -e "${YELLOW}   ⚠️  libreoffice-fresh install failed, continuing...${NC}"
+    }
+elif [[ "$OFFICE_SUITE" =~ ^[Ww]$ ]]; then
+    echo "   Installing WPS Office 365..."
+    $AUR_HELPER -S --needed --noconfirm wps-office-365 || {
+        echo -e "${YELLOW}   ⚠️  wps-office-365 install failed, skipping WPS setup${NC}"
+    }
+
+    if command -v wps >/dev/null 2>&1; then
+        echo "   Applying WPS document-open compatibility fix..."
+
+        # Ensure user-owned config paths so WPS wrappers can write Office.conf and MIME defaults.
+        [ -d "$HOME/.config" ] && sudo chown -R "$(whoami):$(whoami)" "$HOME/.config" || true
+        mkdir -p "$HOME/.local/share"
+        sudo chown -R "$(whoami):$(whoami)" "$HOME/.local/share" || true
+        chmod u+rwX "$HOME/.config" "$HOME/.local/share" 2>/dev/null || true
+
+        # Backup WPS config if already created.
+        if [ -f "$HOME/.config/Kingsoft/Office.conf" ]; then
+            cp -a "$HOME/.config/Kingsoft/Office.conf" "$HOME/.config/Kingsoft/Office.conf.bak.$(date +%F-%H%M%S)" || true
+        fi
+
+        # Force fusion mode and disable cloud/startpage auto-routing (qingbangong).
+        python3 - <<'PY' || true
+from pathlib import Path
+import re
+home = Path.home()
+p = home / ".config" / "Kingsoft" / "Office.conf"
+p.parent.mkdir(parents=True, exist_ok=True)
+s = p.read_text(errors="ignore") if p.exists() else ""
+if "[6.0]" not in s:
+    s += "\n[6.0]\n"
+def set_key(text, key, value):
+    pat = rf"(?m)^{re.escape(key)}=.*$"
+    line = f"{key}={value}"
+    if re.search(pat, text):
+        return re.sub(pat, line, text)
+    return text + ("\n" if not text.endswith("\n") else "") + line + "\n"
+s = set_key(s, r"wpsoffice\Application%20Settings\AppComponentMode", "prome_fushion")
+s = set_key(s, r"common\startFrom", "local")
+s = set_key(s, r"common\useCloud", "false")
+s = set_key(s, r"common\silentautologin", "false")
+s = set_key(s, r"common\AutoLogin", "false")
+s = set_key(s, r"common\kstartpage", "false")
+p.write_text(s)
+print(f"Updated {p}")
+PY
+
+        # Re-assert desktop associations for WPS.
+        xdg-mime default wps-office-prometheus.desktop application/msword application/vnd.openxmlformats-officedocument.wordprocessingml.document application/wps-office.docx
+        xdg-mime default wps-office-pdf.desktop application/pdf
+        update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+        update-mime-database "$HOME/.local/share/mime" 2>/dev/null || true
+
+        echo -e "   ${GREEN}✓${NC} WPS Office 365 setup complete (DOCX/PDF open fix applied)"
+    fi
+fi
 
 # Node.js, Bun and Development Tools
 echo "   Installing Node.js, Bun, and development tools..."
@@ -644,6 +732,16 @@ else
 fi
 
 echo -e "   ${GREEN}✓${NC} Installed Hyprland configs (preserved custom/)"
+
+# Match Hyprland $browser and keybinds to chosen browser (Zen / Thorium / Firefox fallback)
+if [ -n "$CHOSEN_BROWSER_BIN" ] && [ -f "$HOME/.config/hypr/hyprland.conf" ]; then
+    echo "   Setting Hyprland browser to: $CHOSEN_BROWSER_BIN"
+    sed -i "s|^\$browser = .*|\$browser = $CHOSEN_BROWSER_BIN|" "$HOME/.config/hypr/hyprland.conf"
+    if [ -f "$HOME/.config/hypr/keybinds.conf" ]; then
+        sed -i "s|^bind = Super, W, exec, .*|bind = Super, W, exec, $CHOSEN_BROWSER_BIN|" "$HOME/.config/hypr/keybinds.conf"
+    fi
+    echo -e "   ${GREEN}✓${NC} Updated hyprland.conf (and keybinds.conf) for $CHOSEN_BROWSER_BIN"
+fi
 
 echo "   Installing Waybar config..."
 install_config "$SCRIPT_DIR/dots/.config/waybar" "$HOME/.config/waybar"
