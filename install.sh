@@ -15,13 +15,39 @@ NC='\033[0m' # No Color
 cd "$(dirname "$0")"
 SCRIPT_DIR="$(pwd)"
 
+# --- Mode flags ---
+MODE="full"  # "full" = packages + configs, "configs" = configs only (fast iteration)
+for arg in "$@"; do
+    case "$arg" in
+        --configs-only|--configs|-c)
+            MODE="configs"
+            ;;
+        --help|-h)
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --configs-only, -c   Install configs only (skip packages, fast iteration)"
+            echo "  --help, -h           Show this help"
+            echo ""
+            echo "Modes:"
+            echo "  full     Install/update all packages + configs (default)"
+            echo "  configs  Only sync configs to ~/.config and switch theme"
+            exit 0
+            ;;
+        *)
+            echo -e "${YELLOW}⚠️  Unknown option: $arg${NC}"
+            ;;
+    esac
+done
+
 echo -e "${GREEN}╔════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║   Pixel Rice Installer for Arch               ║${NC}"
-echo -e "${GREEN}║   Clean Minimal Arch Installation Ready       ║${NC}"
+echo -e "${GREEN}║   Mode: ${BLUE}$(printf '%-35s' "$MODE")${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════════════╝${NC}"
 
-# 0. Pre-flight Checks
-echo -e "\n${BLUE}[0/6] Pre-flight System Checks...${NC}"
+if [ "$MODE" = "full" ]; then
+    # 0. Pre-flight Checks
+    echo -e "\n${BLUE}[0/6] Pre-flight System Checks...${NC}"
 
 # Check if running as root
 if [ "$EUID" -eq 0 ]; then
@@ -197,17 +223,14 @@ $AUR_HELPER -S --needed --noconfirm \
     swappy \
     wl-screenrec
 
-# Fonts
+# Fonts (repo + AUR via yay/paru)
 $AUR_HELPER -S --needed --noconfirm \
     ttf-terminus-nerd \
     ttf-font-awesome \
     ttf-jetbrains-mono-nerd \
     noto-fonts \
     noto-fonts-emoji \
-    noto-fonts-cjk
-
-# Extra fonts (AUR): EB Garamond, WPS and Microsoft compatibility fonts
-$AUR_HELPER -S --needed --noconfirm \
+    noto-fonts-cjk \
     ebgaramond-otf \
     ttf-wps-fonts \
     ttf-ms-fonts
@@ -272,30 +295,35 @@ $AUR_HELPER -S --needed --noconfirm \
     papirus-icon-theme \
     gsettings-desktop-schemas
 
-# Browser (optional: Thorium AVX2 vs Zen)
+# Browser (default: Floorp — Firefox-based, rectangular UI, GTK dark theme support)
 CHOSEN_BROWSER_BIN=""
+echo "   Installing Floorp (default browser)..."
+if $AUR_HELPER -S --needed --noconfirm floorp-bin; then
+    CHOSEN_BROWSER_BIN="floorp"
+else
+    echo -e "${YELLOW}   ⚠️  floorp-bin install failed, falling back to Firefox${NC}"
+    sudo pacman -S --needed --noconfirm firefox && CHOSEN_BROWSER_BIN="firefox"
+fi
+
+# Optional: Zen Browser (Gecko-based, Firefox-compatible rendering)
 echo ""
-read -r -p "   Choose web browser: [T]horium (thorium-browser-avx2-bin) / [Z]en (zen-browser-bin, default): " BROWSER_CHOICE
-case "${BROWSER_CHOICE:-Z}" in
-    [Tt])
-        echo "   Installing thorium-browser-avx2-bin..."
-        if $AUR_HELPER -S --needed --noconfirm thorium-browser-avx2-bin; then
-            CHOSEN_BROWSER_BIN="thorium-browser"
-        else
-            echo -e "${YELLOW}   ⚠️  thorium-browser-avx2-bin install failed, falling back to Firefox${NC}"
-            sudo pacman -S --needed --noconfirm firefox && CHOSEN_BROWSER_BIN="firefox"
-        fi
-        ;;
-    *)
-        echo "   Installing zen-browser-bin..."
-        if $AUR_HELPER -S --needed --noconfirm zen-browser-bin; then
-            CHOSEN_BROWSER_BIN="zen-browser"
-        else
-            echo -e "${YELLOW}   ⚠️  zen-browser-bin not found, trying Firefox...${NC}"
-            sudo pacman -S --needed --noconfirm firefox && CHOSEN_BROWSER_BIN="firefox"
-        fi
-        ;;
-esac
+read -r -p "   Also install Zen Browser (zen-browser-bin)? [y/N]: " ZEN_INSTALL
+if [[ "$ZEN_INSTALL" =~ ^[Yy] ]]; then
+    echo "   Installing zen-browser-bin..."
+    $AUR_HELPER -S --needed --noconfirm zen-browser-bin || {
+        echo -e "${YELLOW}   ⚠️  zen-browser-bin install failed, continuing...${NC}"
+    }
+fi
+
+# Optional: Thorium (Chromium AVX2 — fast but can't be themed to rectangular)
+echo ""
+read -r -p "   Also install Thorium (thorium-browser-avx2-bin, Chromium AVX2)? [y/N]: " THORIUM_INSTALL
+if [[ "$THORIUM_INSTALL" =~ ^[Yy] ]]; then
+    echo "   Installing thorium-browser-avx2-bin..."
+    $AUR_HELPER -S --needed --noconfirm thorium-browser-avx2-bin || {
+        echo -e "${YELLOW}   ⚠️  thorium-browser-avx2-bin install failed, continuing...${NC}"
+    }
+fi
 
 # Developer CLIs (GitHub, Copilot)
 echo "   Installing developer CLIs: github-cli and github-copilot-cli-bin..."
@@ -317,6 +345,191 @@ echo "   Installing Obsidian..."
 $AUR_HELPER -S --needed --noconfirm obsidian-bin || {
     echo -e "${YELLOW}   ⚠️  obsidian-bin not found, continuing...${NC}"
 }
+
+# Optional: Obsidian Vault + Community Plugins Setup
+echo ""
+read -r -p "   Set up Obsidian vault with community plugins? [y/N]: " OBSIDIAN_SETUP
+if [[ "$OBSIDIAN_SETUP" =~ ^[Yy]$ ]]; then
+    echo ""
+    echo "   🔷 Obsidian Vault Setup"
+    echo ""
+
+    # Ask for vault directory
+    read -r -p "   Vault directory (default: ~/Obsidian): " VAULT_INPUT
+    OBSIDIAN_VAULT="${VAULT_INPUT:-$HOME/Obsidian}"
+
+    # Create vault structure
+    echo "   Creating vault at: $OBSIDIAN_VAULT"
+    mkdir -p "$OBSIDIAN_VAULT/.obsidian/plugins"
+    for dir in Dashboard Inbox Knowledge "Daily Notes" Templates Attachments Archive Meta "Excalidraw/Scripts" Projects Areas Resources; do
+        mkdir -p "$OBSIDIAN_VAULT/$dir"
+    done
+
+    # Plugin list: "plugin_id|owner/repo"
+    OBSIDIAN_PLUGINS=(
+        "obsidian-agent-client|RAIT-09/obsidian-agent-client"
+        "katmer-code|hkcanan/katmer-code"
+        "smart-connections|brianpetro/obsidian-smart-connections"
+        "file-hider|Eldritch-Oliver/file-hider"
+        "cmdr|phibr0/obsidian-commander"
+        "file-explorer-note-count|ozntel/file-explorer-note-count"
+        "file-explorer-plus-plus|kelszo/obsidian-file-explorer-plus"
+        "notebook-navigator|johansan/notebook-navigator"
+        "homepage|mirnovov/obsidian-homepage"
+        "omnisearch|scambier/obsidian-omnisearch"
+        "obsidian-icon-folder|FlorianWoelki/obsidian-iconize"
+        "obsidian-file-color|ecustic/obsidian-file-color"
+        "colored-tags|code-of-chaos/obsidian-colored_tags_wrangler"
+        "calendar|liamcain/obsidian-calendar-plugin"
+        "tag-wrangler|pjeby/tag-wrangler"
+        "ninja-cursor|vrtmrz/ninja-cursor"
+        "code-styler|mayurankv/obsidian-code-styler"
+        "obsidian-admonition|valentine195/obsidian-admonition"
+        "obsidian-advanced-uri|Vinzent03/obsidian-advanced-uri"
+        "better-codeblock|stargrey/obsidian-better-codeblock"
+        "obsidian-outliner|vslinko/obsidian-outliner"
+        "update-time-on-edit|beaussan/update-time-on-edit-obsidian"
+        "obsidian-linter|platers/obsidian-linter"
+        "meta-bind|mProjectsCode/obsidian-meta-bind-plugin"
+        "dataview|blacksmithgu/obsidian-dataview"
+        "obsidian-tasks-plugin|obsidian-tasks-group/obsidian-tasks"
+        "obsidian-excalidraw-plugin|zsviczian/obsidian-excalidraw-plugin"
+        "obsidian-mind-map|lynchjames/obsidian-mind-map"
+        "heatmap-tracker|mokkiebear/heatmap-tracker"
+        "obsidian-git|denolehov/obsidian-git"
+        "remotely-save|remotely-save/remotely-save"
+        "obsidian42-brat|TfTHacker/obsidian42-brat"
+        "agentfiles|Railly/agentfiles"
+    )
+
+    PLUGIN_DIR="$OBSIDIAN_VAULT/.obsidian/plugins"
+    TOTAL=${#OBSIDIAN_PLUGINS[@]}
+    INSTALLED=0
+    FAILED=0
+
+    echo ""
+    echo "   📦 Installing $TOTAL community plugins..."
+    echo ""
+
+    for entry in "${OBSIDIAN_PLUGINS[@]}"; do
+        IFS='|' read -r plugin_id repo <<< "$entry"
+        plugin_dir="$PLUGIN_DIR/$plugin_id"
+
+        if [ -d "$plugin_dir" ] && [ -f "$plugin_dir/main.js" ] && [ -s "$plugin_dir/main.js" ]; then
+            echo "     ✅ $plugin_id (already installed)"
+            ((INSTALLED++))
+            continue
+        fi
+
+        echo -n "     ⬇️  $plugin_id... "
+        mkdir -p "$plugin_dir"
+
+        # Try GitHub releases first
+        release_json=$(curl -sL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null || echo "{}")
+        main_url=$(echo "$release_json" | python3 -c "
+import sys,json
+try:
+    for a in json.load(sys.stdin).get('assets',[]):
+        if a['name']=='main.js': print(a['browser_download_url']); break
+except: pass
+" 2>/dev/null)
+
+        # Fallback: raw from default branch
+        if [ -z "$main_url" ]; then
+            branch="master"
+            curl -sI "https://raw.githubusercontent.com/$repo/main/main.js" 2>/dev/null | head -1 | grep -q "200" && branch="main"
+            # Special case: agentfiles uses refs/heads/main
+            if [ "$plugin_id" = "agentfiles" ]; then
+                branch="refs/heads/main"
+            fi
+            main_url="https://raw.githubusercontent.com/$repo/$branch/main.js"
+            manifest_url="https://raw.githubusercontent.com/$repo/$branch/manifest.json"
+            styles_url="https://raw.githubusercontent.com/$repo/$branch/styles.css"
+        fi
+
+        ok=true
+        curl -sL -o "$plugin_dir/main.js" "$main_url" 2>/dev/null || ok=false
+        [ -n "$manifest_url" ] && curl -sL -o "$plugin_dir/manifest.json" "$manifest_url" 2>/dev/null || true
+        [ -n "$styles_url" ] && curl -sL -o "$plugin_dir/styles.css" "$styles_url" 2>/dev/null || true
+
+        if [ "$ok" = true ] && [ -s "$plugin_dir/main.js" ] && ! head -1 "$plugin_dir/main.js" | grep -qi "404"; then
+            echo "✅"
+            ((INSTALLED++))
+        else
+            echo "❌"
+            rm -rf "$plugin_dir"
+            ((FAILED++))
+        fi
+    done
+
+    echo ""
+    echo "   📊 Plugins: $INSTALLED installed, $FAILED failed"
+
+    if [ "$FAILED" -gt 0 ]; then
+        echo -e "   ${YELLOW}⚠️  Some plugins failed. Install them manually in Obsidian Settings → Community Plugins.${NC}"
+    fi
+
+    # Write community-plugins.json
+    plugin_ids=()
+    for entry in "${OBSIDIAN_PLUGINS[@]}"; do
+        IFS='|' read -r pid _ <<< "$entry"
+        if [ -d "$PLUGIN_DIR/$pid" ] && [ -f "$PLUGIN_DIR/$pid/main.js" ]; then
+            plugin_ids+=("\"$pid\"")
+        fi
+    done
+    printf '[\n  %s\n]\n' "$(IFS=', '; echo "${plugin_ids[*]}")" | python3 -c "
+import sys, json
+plugins = json.loads(sys.stdin.read())
+json.dump(plugins, open('$OBSIDIAN_VAULT/.obsidian/community-plugins.json', 'w'), indent=2)
+"
+
+    # Copy config files from obsidian-vault template
+    if [ -d "$SCRIPT_DIR/obsidian-vault/.obsidian" ]; then
+        for f in app.json appearance.json core-plugins.json hotkeys.json templates.json daily-notes.json bookmarks.json plugins-config.json; do
+            if [ -f "$SCRIPT_DIR/obsidian-vault/.obsidian/$f" ]; then
+                cp "$SCRIPT_DIR/obsidian-vault/.obsidian/$f" "$OBSIDIAN_VAULT/.obsidian/$f"
+            fi
+        done
+    fi
+
+    # Copy vault content
+    for f in "Dashboard/DASHBOARD.md" "Life Starts Here.md" "README.md" "AUDIT.md" ".gitignore"; do
+        if [ -f "$SCRIPT_DIR/obsidian-vault/$f" ]; then
+            mkdir -p "$(dirname "$OBSIDIAN_VAULT/$f")"
+            cp "$SCRIPT_DIR/obsidian-vault/$f" "$OBSIDIAN_VAULT/$f"
+        fi
+    done
+    for f in "Templates/Daily Note.md" "Templates/Meeting Note.md" "Templates/Technical Spec.md"; do
+        if [ -f "$SCRIPT_DIR/obsidian-vault/$f" ]; then
+            cp "$SCRIPT_DIR/obsidian-vault/$f" "$OBSIDIAN_VAULT/$f"
+        fi
+    done
+
+    # Init git repo to prevent warning
+    if [ ! -d "$OBSIDIAN_VAULT/.git" ]; then
+        echo ""
+        echo "   🔧 Initializing git repo in vault (removes 'not a git repo' warning)..."
+        (cd "$OBSIDIAN_VAULT" && git init && git add -A && git commit -m "init: obsidian vault" >/dev/null 2>&1)
+        echo -e "   ${GREEN}✓${NC} Git repo initialized"
+    fi
+
+    # Configure Agent Client for user's AI tools
+    echo ""
+    echo "   🤖 Configuring AI agents:"
+    echo "      - Qwen Code:      $(command -v qwen 2>/dev/null || echo 'not found')"
+    echo "      - Gemini CLI:     $(command -v gemini 2>/dev/null || echo 'not found')"
+    echo "      - Copilot CLI:    $(command -v github-copilot-cli 2>/dev/null || echo 'not found')"
+    echo ""
+    echo "   To use AI agents in Obsidian:"
+    echo "   1. Open vault → Settings → Agent Client"
+    echo "   2. Set path for Qwen: $(command -v qwen 2>/dev/null || echo '~/.npm-global/bin/qwen')"
+    echo "   3. Set path for Gemini: $(command -v gemini 2>/dev/null || echo '~/.local/bin/gemini')"
+    echo "   4. Add --experimental-acp to Arguments field for both"
+
+    echo ""
+    echo -e "   ${GREEN}✓${NC} Obsidian vault setup complete at: $OBSIDIAN_VAULT"
+    echo "   Open Obsidian → File → Open folder as vault → $OBSIDIAN_VAULT"
+fi
 
 # Optional: Office suite (LibreOffice or WPS 365)
 echo ""
@@ -542,28 +755,26 @@ fi
 
 # Install Ryzen Power Management Service if ryzenadj is installed
 if command -v ryzenadj >/dev/null 2>&1; then
-    echo "   Installing Ryzen Power Management Service (ryzen-power)..."
-    sudo cp "$SCRIPT_DIR/scripts/manage_power.sh" /usr/local/bin/ryzen-power
-    sudo chmod +x /usr/local/bin/ryzen-power
-    
-    sudo tee /etc/systemd/system/ryzen-power.service > /dev/null <<EOF
-[Unit]
-Description=Ryzen TDP Power Management Service
-After=multi-user.target
+    echo "   Installing Ryzen Power Management (manage_power.sh + systemd path trigger)..."
+    sudo cp "$SCRIPT_DIR/scripts/manage_power.sh" /usr/local/bin/manage_power.sh
+    sudo chmod +x /usr/local/bin/manage_power.sh
 
-[Service]
-Type=simple
-ExecStart=/usr/local/bin/ryzen-power
-Restart=always
-RestartSec=5
+    # Remove old polling-based service if it exists
+    sudo systemctl disable --now ryzen-power.service 2>/dev/null || true
+    sudo rm -f /etc/systemd/system/ryzen-power.service
 
-[Install]
-WantedBy=multi-user.target
-EOF
+    # Install new oneshot service + PathChanged trigger
+    if [ -f "$SCRIPT_DIR/systemd/ryzen-power.service" ]; then
+        sudo cp "$SCRIPT_DIR/systemd/ryzen-power.service" /etc/systemd/system/ryzen-power.service
+    fi
+    if [ -f "$SCRIPT_DIR/systemd/ryzen-power.path" ]; then
+        sudo cp "$SCRIPT_DIR/systemd/ryzen-power.path" /etc/systemd/system/ryzen-power.path
+    fi
+
     sudo systemctl daemon-reload
-    sudo systemctl enable ryzen-power.service
-    sudo systemctl start ryzen-power.service
-    echo -e "   ${GREEN}✓${NC} Ryzen Power Management Service enabled"
+    sudo systemctl enable --now ryzen-power.path
+    echo -e "   ${GREEN}✓${NC} Ryzen Power Management: oneshot service + PathChanged trigger enabled"
+    echo "   (triggers on /sys/firmware/acpi/platform_profile change — no polling)"
 fi
 
 # Disable conflicting display managers
@@ -574,6 +785,75 @@ for dm in gdm lightdm lxdm; do
         sudo systemctl disable "$dm" 2>/dev/null || true
     fi
 done
+
+# Kernel-level power tuning (applied at boot via modprobe/sysctl)
+echo "   Installing kernel power tuning configs..."
+
+# AMDGPU power saving at driver level
+sudo tee /etc/modprobe.d/amdgpu-powersave.conf > /dev/null <<'EOF'
+# AMDGPU: Force DPM, enable ASPM, reduce power
+options amdgpu ppfeaturemask=0xffffffff dpm=1 aspm=1 bapm=1
+EOF
+echo -e "   ${GREEN}✓${NC} amdgpu-powersave.conf"
+
+# USB autosuspend at boot
+sudo tee /etc/modprobe.d/usb-autosuspend.conf > /dev/null <<'EOF'
+options usbcore autosuspend=2
+EOF
+echo -e "   ${GREEN}✓${NC} usb-autosuspend.conf"
+
+# VM tuning for power saving (less frequent disk writes)
+sudo tee /etc/sysctl.d/99-power-saving.conf > /dev/null <<'EOF'
+# Dirty writeback: batch writes, reduce disk spin-ups
+vm.dirty_writeback_centisecs = 500
+vm.dirty_expire_centisecs = 6000
+# NMI watchdog: disable to save ~0.5W idle
+kernel.nmi_watchdog = 0
+# Laptop mode
+vm.laptop_mode = 5
+EOF
+echo -e "   ${GREEN}✓${NC} 99-power-saving.conf"
+
+# udev rules for PCIe runtime PM
+sudo mkdir -p /etc/udev/rules.d
+sudo tee /etc/udev/rules.d/81-pm-powersave.rules > /dev/null <<'EOF'
+# Enable runtime PM for all PCI devices
+ACTION=="add", SUBSYSTEM=="pci", ATTR{power/control}="auto"
+# Enable USB autosuspend
+ACTION=="add", SUBSYSTEM=="usb", TEST=="power/control", ATTR{power/control}="auto"
+# I2C controllers (touchpad)
+ACTION=="add", SUBSYSTEM=="i2c", ATTR{power/control}="auto"
+# Sound codecs
+ACTION=="add", SUBSYSTEM=="sound", ATTR{power/control}="auto"
+ACTION=="add", SUBSYSTEM=="snd", ATTR{power/control}="auto"
+EOF
+echo -e "   ${GREEN}✓${NC} 81-pm-powersave.rules"
+
+# ThinkBook 14p Gen 2 ACH (AMD Ryzen 7 5800H) — verified power tuning
+if [ "$LAPTOP_PROFILE" = "thinkbook14p" ]; then
+    echo "   Applying ThinkBook 14p Gen 2 ACH verified power tuning..."
+
+    # Add pcie_aspm.policy=powersupersave to bootloader entries
+    if [ -d /boot/loader/entries ]; then
+        for entry in /boot/loader/entries/*.conf; do
+            [ -f "$entry" ] || continue
+            if ! grep -q 'pcie_aspm' "$entry" 2>/dev/null; then
+                sudo sed -i 's/^options /&pcie_aspm.policy=powersupersave /' "$entry"
+                echo -e "   ${GREEN}✓${NC} Added pcie_aspm.policy=powersupersave to $(basename "$entry")"
+            fi
+        done
+    fi
+
+    # AMDGPU specific power management for integrated Radeon graphics
+    if [ -d /sys/class/drm/card0/device ]; then
+        # Force lowest DPM state in power-saver mode
+        if [ -w /sys/class/drm/card0/device/power_dpm_force_performance_level ]; then
+            echo "manual" | sudo tee /sys/class/drm/card0/device/power_dpm_force_performance_level 2>/dev/null || true
+            echo "1" | sudo tee /sys/class/drm/card0/device/pp_dpm_sclk 2>/dev/null || true
+            echo -e "   ${GREEN}✓${NC} AMDGPU: locked to lowest DPM state"
+        fi
+    fi
+fi
 
 # Ensure sddm user exists with correct permissions
 if ! id sddm >/dev/null 2>&1; then
@@ -601,13 +881,17 @@ if ! systemctl is-enabled sddm >/dev/null 2>&1; then
     sudo systemctl enable sddm
 fi
 
-echo -e "${GREEN}✓ System services enabled!${NC}"
+    echo -e "${GREEN}✓ System services enabled!${NC}"
+fi  # end MODE=full block
 
-# 7. Configuration Installation
-echo -e "\n${BLUE}[7/7] Installing Configurations...${NC}"
+# 7. Configuration Installation (always runs)
+if [ "$MODE" = "full" ]; then
+    echo -e "\n${BLUE}[7/7] Installing Configurations...${NC}"
+else
+    echo -e "\n${BLUE}Installing Configurations (--configs-only)...${NC}"
+fi
 mkdir -p "$HOME/.config"
-TIMESTAMP=$(date +%F_%H-%M-%S)
-BACKUP_DIR="$HOME/.config_backup_$TIMESTAMP"
+BACKUP_DIR="$HOME/.config_backup_previous"
 
 # Function to backup and install config
 install_config() {
@@ -621,9 +905,10 @@ install_config() {
     fi
 
     if [ -e "$DEST" ] && [ ! -L "$DEST" ]; then
+        # Single rotating backup: keep only the previous version
         mkdir -p "$BACKUP_DIR"
+        rm -rf "$BACKUP_DIR/$BASE_NAME"
         cp -a "$DEST" "$BACKUP_DIR/$BASE_NAME"
-        echo "   Backed up $BASE_NAME to $BACKUP_DIR"
     fi
 
     mkdir -p "$(dirname "$DEST")"
@@ -733,7 +1018,7 @@ fi
 
 echo -e "   ${GREEN}✓${NC} Installed Hyprland configs (preserved custom/)"
 
-# Match Hyprland $browser and keybinds to chosen browser (Zen / Thorium / Firefox fallback)
+# Match Hyprland $browser and keybinds to chosen browser (Floorp default, Zen/Thorium optional)
 if [ -n "$CHOSEN_BROWSER_BIN" ] && [ -f "$HOME/.config/hypr/hyprland.conf" ]; then
     echo "   Setting Hyprland browser to: $CHOSEN_BROWSER_BIN"
     sed -i "s|^\$browser = .*|\$browser = $CHOSEN_BROWSER_BIN|" "$HOME/.config/hypr/hyprland.conf"
@@ -880,6 +1165,39 @@ if [ -f "$SCRIPT_DIR/etc/polkit-1/rules.d/50-allow-suspend.rules" ]; then
     sudo mkdir -p /etc/polkit-1/rules.d
     sudo cp "$SCRIPT_DIR/etc/polkit-1/rules.d/50-allow-suspend.rules" /etc/polkit-1/rules.d/
     echo -e "   ${GREEN}✓${NC} Installed polkit rule for passwordless suspend (power/wheel)"
+fi
+
+# Dynamic Theme Switching (power-saver vs cartoon-shell based on power profile)
+echo "   Installing dynamic theme switching..."
+if [ -f "$SCRIPT_DIR/scripts/theme-switcher.sh" ]; then
+    cp "$SCRIPT_DIR/scripts/theme-switcher.sh" "$HOME/.local/bin/theme-switcher.sh"
+    chmod +x "$HOME/.local/bin/theme-switcher.sh"
+    echo -e "   ${GREEN}✓${NC} Installed theme-switcher.sh"
+fi
+
+# Install both theme trees to /opt/pixel-rice/themes/
+if [ -d "$SCRIPT_DIR/dots" ] && [ -d "$SCRIPT_DIR/dots-power-saver" ]; then
+    echo "   Installing theme trees to /opt/pixel-rice/themes/..."
+    sudo mkdir -p /opt/pixel-rice/themes
+
+    # cartoon-shell (balanced / performance)
+    sudo rm -rf /opt/pixel-rice/themes/cartoon-shell
+    sudo cp -a "$SCRIPT_DIR/dots" /opt/pixel-rice/themes/cartoon-shell
+
+    # power-saver (zero effects, max performance)
+    sudo rm -rf /opt/pixel-rice/themes/power-saver
+    sudo cp -a "$SCRIPT_DIR/dots-power-saver" /opt/pixel-rice/themes/power-saver
+
+    sudo chmod -R 755 /opt/pixel-rice/themes
+    echo -e "   ${GREEN}✓${NC} Installed cartoon-shell and power-saver theme trees"
+fi
+
+# Apply theme matching current power profile on first boot
+if [ -f "$HOME/.local/bin/theme-switcher.sh" ] && command -v powerprofilesctl >/dev/null 2>&1; then
+    echo "   Applying theme for current power profile..."
+    "$HOME/.local/bin/theme-switcher.sh" 2>/dev/null && \
+        echo -e "   ${GREEN}✓${NC} Applied theme for profile: $(powerprofilesctl get)" || \
+        echo -e "   ${YELLOW}⚠️${NC}  Theme switcher ran but couldn't apply (will trigger on next profile change)"
 fi
 
 # Install SDDM Theme
@@ -1142,6 +1460,73 @@ sudo tee /etc/systemd/logind.conf.d/powerbutton.conf > /dev/null <<EOF
 HandlePowerKey=suspend
 EOF
 
+# 8. Cleanup (reclaim disk space after install/update)
+echo -e "\n${BLUE}Cleaning up redundant files...${NC}"
+
+# Pacman package cache — remove uninstalled package versions, keep last 3
+if command -v paccache >/dev/null 2>&1; then
+    echo -n "   Pacman cache (keeping last 3 versions)... "
+    sudo paccache -rk3 >/dev/null 2>&1 && echo -e "${GREEN}✓${NC}" || echo -e "${YELLOW}skipped${NC}"
+else
+    echo -n "   Pacman cache (remove uninstalled)... "
+    sudo pacman -Sc --noconfirm >/dev/null 2>&1 && echo -e "${GREEN}✓${NC}" || echo -e "${YELLOW}skipped${NC}"
+fi
+
+# Orphan packages (deps no longer required by anything)
+ORPHANS=$(pacman -Qtdq 2>/dev/null || true)
+if [ -n "$ORPHANS" ]; then
+    echo -n "   Removing orphan packages... "
+    sudo pacman -Rns --noconfirm $ORPHANS >/dev/null 2>&1 && echo -e "${GREEN}✓${NC}" || echo -e "${YELLOW}some skipped${NC}"
+else
+    echo "   No orphan packages to remove"
+fi
+
+# AUR helper cache (build artifacts in ~/.cache/yay/)
+if [ -d "$HOME/.cache/yay" ]; then
+    YAY_SIZE=$(du -sh "$HOME/.cache/yay" 2>/dev/null | cut -f1)
+    echo -n "   AUR build cache (~${YAY_SIZE})... "
+    if [ "$AUR_HELPER" = "yay" ] && command -v yay >/dev/null 2>&1; then
+        yay -Scc --noconfirm >/dev/null 2>&1 && echo -e "${GREEN}✓${NC}" || echo -e "${YELLOW}skipped${NC}"
+    elif [ "$AUR_HELPER" = "paru" ] && command -v paru >/dev/null 2>&1; then
+        paru -Scc --noconfirm >/dev/null 2>&1 && echo -e "${GREEN}✓${NC}" || echo -e "${YELLOW}skipped${NC}"
+    else
+        # Manual cleanup
+        rm -rf "$HOME/.cache/yay"
+        echo -e "${GREEN}✓${NC} (removed)"
+    fi
+fi
+
+# Journal logs — cap at 100MB
+if command -v journalctl >/dev/null 2>&1; then
+    JOURNAL_SIZE=$(du -sh /var/log/journal/ 2>/dev/null | cut -f1 || echo "0")
+    echo -n "   Journal logs (~${JOURNAL_SIZE}, cap 100MB)... "
+    sudo journalctl --vacuum-size=100M >/dev/null 2>&1 && echo -e "${GREEN}✓${NC}" || echo -e "${YELLOW}skipped${NC}"
+fi
+
+# Font cache
+if command -v fc-cache >/dev/null 2>&1; then
+    echo -n "   Rebuilding font cache... "
+    fc-cache -f >/dev/null 2>&1 && echo -e "${GREEN}✓${NC}" || echo -e "${YELLOW}skipped${NC}"
+fi
+
+# Thumbnail cache
+if [ -d "$HOME/.cache/thumbnails" ]; then
+    rm -rf "$HOME/.cache/thumbnails"
+    echo "   Thumbnail cache cleared"
+fi
+
+# Old config backups (cleanup timestamped backups from pre-v2 installs)
+OLD_BACKUPS=$(ls -d "$HOME"/.config_backup_20* 2>/dev/null | head -20)
+if [ -n "$OLD_BACKUPS" ]; then
+    echo -n "   Removing old timestamped backups... "
+    echo "$OLD_BACKUPS" | while read -r dir; do rm -rf "$dir"; done
+    echo -e "${GREEN}✓${NC}"
+fi
+
+# Summary
+echo ""
+echo -e "${GREEN}✓ Cleanup complete!${NC}"
+
 echo -e "\n${GREEN}╔════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║          Installation Complete! 🎉            ║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════════════╝${NC}"
@@ -1189,8 +1574,9 @@ echo "  • Custom pixel theme installed"
 echo "  • Will be active after reboot"
 echo ""
 if [ -d "$BACKUP_DIR" ]; then
-    echo -e "${YELLOW}Note:${NC} Your old configs were backed up to:"
+    echo -e "${YELLOW}Note:${NC} Your previous configs are in:"
     echo "      $BACKUP_DIR"
+    echo "   (rotated — only the last version is kept)"
 fi
 echo ""
 echo -e "${GREEN}Enjoy your Pixel Rice! 🎮${NC}"

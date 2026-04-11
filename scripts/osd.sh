@@ -91,7 +91,7 @@ case "$TYPE" in
     "power")
         # ACTION: performance, balanced, power-saver
         powerprofilesctl set "$ACTION"
-        
+
         case "$ACTION" in
             "performance")
                 ICON="power-profile-performance"
@@ -106,10 +106,13 @@ case "$TYPE" in
                 TEXT="Power Saver"
                 ;;
         esac
-        
+
         notify-send -h string:x-canonical-private-synchronous:sys-notify \
             -i "$ICON" \
             "Power Profile" "$TEXT"
+
+        # Switch UI theme to match power profile
+        "$HOME/.local/bin/theme-switcher.sh" &
         ;;
         
     "wlsunset")

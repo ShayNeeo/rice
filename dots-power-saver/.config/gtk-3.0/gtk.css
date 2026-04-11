@@ -1,0 +1,273 @@
+/* Power-Saver GTK3 Theme — zero rounding, zero shadow, zero transition */
+
+* {
+    outline-style: none;
+    outline-width: 0;
+    -gtk-outline-radius: 0;
+    transition: none;
+}
+
+window {
+    background-color: #151621;
+    color: #e0e2f0;
+    font-family: "Terminus", monospace;
+}
+
+.thunar {
+    background-color: #151621;
+    color: #e0e2f0;
+}
+
+.sidebar {
+    background-color: #1e2030;
+    color: #e0e2f0;
+    border-right: 2px solid #2a2c3c;
+}
+
+.sidebar row {
+    background-color: transparent;
+    color: #e0e2f0;
+    padding: 4px 8px;
+    margin: 2px;
+}
+
+.sidebar row:hover {
+    background-color: #26283a;
+}
+
+.sidebar row:selected {
+    background-color: #26283a;
+    color: #4fd6ff;
+    font-weight: bold;
+}
+
+toolbar, headerbar {
+    background-color: #1e2030;
+    border-bottom: 2px solid #2a2c3c;
+    color: #e0e2f0;
+    padding: 4px;
+    min-height: 36px;
+}
+
+toolbar button, headerbar button {
+    background-color: #26283a;
+    color: #e0e2f0;
+    border: 1px solid #2a2c3c;
+    padding: 4px 8px;
+    margin: 2px;
+    min-height: 24px;
+}
+
+toolbar button:hover, headerbar button:hover {
+    background-color: #3d4058;
+    color: #e0e2f0;
+}
+
+toolbar button:active, headerbar button:active {
+    background-color: #4fd6ff;
+    color: #151621;
+}
+
+.path-bar {
+    background-color: #1e2030;
+    border: 1px solid #4fd6ff;
+}
+
+.path-bar button {
+    background-color: transparent;
+    color: #e0e2f0;
+    border: none;
+    padding: 4px 8px;
+}
+
+.path-bar button:hover {
+    background-color: #26283a;
+}
+
+.path-bar button:active {
+    background-color: #4fd6ff;
+    color: #151621;
+}
+
+.view {
+    background-color: #151621;
+    color: #e0e2f0;
+    border: none;
+}
+
+.view:selected {
+    background-color: #26283a;
+    color: #4fd6ff;
+}
+
+.view:selected:focus {
+    background-color: #4fd6ff;
+    color: #151621;
+}
+
+scrollbar {
+    background-color: #1e2030;
+}
+
+scrollbar slider {
+    background-color: #2a2c3c;
+    border: 1px solid #3d4058;
+    min-width: 12px;
+    min-height: 12px;
+}
+
+scrollbar slider:hover {
+    background-color: #3d4058;
+}
+
+scrollbar slider:active {
+    background-color: #4fd6ff;
+}
+
+entry {
+    background-color: #1e2030;
+    color: #e0e2f0;
+    border: 1px solid #2a2c3c;
+    padding: 6px;
+}
+
+entry:focus {
+    border: 2px solid #4fd6ff;
+    background-color: #26283a;
+}
+
+entry selection {
+    background-color: #26283a;
+    color: #4fd6ff;
+}
+
+menu {
+    background-color: #1e2030;
+    border: 2px solid #2a2c3c;
+    padding: 4px;
+}
+
+menuitem {
+    background-color: transparent;
+    color: #e0e2f0;
+    padding: 6px 12px;
+    margin: 1px;
+}
+
+menuitem:hover {
+    background-color: #26283a;
+    color: #e0e2f0;
+}
+
+menuitem:disabled {
+    color: #8a8a9a;
+}
+
+popover {
+    background-color: #1e2030;
+    border: 2px solid #2a2c3c;
+}
+
+statusbar {
+    background-color: #1e2030;
+    border-top: 2px solid #2a2c3c;
+    color: #e0e2f0;
+    padding: 4px 8px;
+}
+
+.context-menu {
+    background-color: #1e2030;
+    border: 2px solid #2a2c3c;
+}
+
+notebook {
+    background-color: #151621;
+}
+
+notebook header {
+    background-color: #1e2030;
+    border-bottom: 2px solid #2a2c3c;
+}
+
+notebook tab {
+    background-color: #26283a;
+    color: #e0e2f0;
+    border: 1px solid #2a2c3c;
+    padding: 6px 12px;
+    margin: 2px;
+}
+
+notebook tab:hover {
+    background-color: #3d4058;
+    color: #e0e2f0;
+}
+
+notebook tab:checked {
+    background-color: #4fd6ff;
+    color: #151621;
+    border: 1px solid #4fd6ff;
+}
+
+tooltip {
+    background-color: #1e2030;
+    border: 1px solid #2a2c3c;
+    color: #e0e2f0;
+    padding: 4px 8px;
+}
+
+button {
+    background-color: #26283a;
+    color: #e0e2f0;
+    border: 1px solid #2a2c3c;
+    padding: 6px 12px;
+    margin: 2px;
+}
+
+button:hover {
+    background-color: #3d4058;
+    color: #e0e2f0;
+}
+
+button:active {
+    background-color: #4fd6ff;
+    color: #151621;
+}
+
+button:disabled {
+    background-color: #1e2030;
+    color: #8a8a9a;
+    border: 1px solid #2a2c3c;
+}
+
+checkbutton check, radiobutton radio {
+    background-color: #1e2030;
+    border: 1px solid #2a2c3c;
+    min-width: 16px;
+    min-height: 16px;
+}
+
+checkbutton check:checked, radiobutton radio:checked {
+    background-color: #4fd6ff;
+    border: 1px solid #4fd6ff;
+    -gtk-icon-source: none;
+    background-image: linear-gradient(to bottom, #4fd6ff, #4fd6ff);
+}
+
+progressbar {
+    background-color: #1e2030;
+    border: 1px solid #2a2c3c;
+}
+
+progressbar progress {
+    background-color: #4fd6ff;
+}
+
+progressbar trough {
+    background-color: #1e2030;
+}
+
+separator {
+    background-color: #2a2c3c;
+    min-width: 1px;
+    min-height: 1px;
+}

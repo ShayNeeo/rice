@@ -1,0 +1,130 @@
+/* Power-Saver GTK4 Theme — zero rounding, zero shadow, zero transition */
+
+* {
+    transition: none;
+}
+
+window {
+    background-color: #151621;
+    color: #e0e2f0;
+    font-family: "Terminus", monospace;
+}
+
+.sidebar {
+    background-color: #1e2030;
+    color: #e0e2f0;
+    border-right: 2px solid #2a2c3c;
+}
+
+.sidebar row {
+    background-color: transparent;
+    color: #e0e2f0;
+    padding: 4px 8px;
+    margin: 2px;
+}
+
+.sidebar row:hover {
+    background-color: #26283a;
+}
+
+.sidebar row:selected {
+    background-color: #26283a;
+    color: #4fd6ff;
+    font-weight: bold;
+}
+
+headerbar {
+    background-color: #1e2030;
+    border-bottom: 2px solid #2a2c3c;
+    color: #e0e2f0;
+    padding: 4px;
+    min-height: 36px;
+}
+
+headerbar button {
+    background-color: #26283a;
+    color: #e0e2f0;
+    border: 1px solid #2a2c3c;
+    padding: 4px 8px;
+    margin: 2px;
+    min-height: 24px;
+}
+
+headerbar button:hover {
+    background-color: #3d4058;
+    color: #e0e2f0;
+}
+
+headerbar button:active {
+    background-color: #4fd6ff;
+    color: #151621;
+}
+
+.view {
+    background-color: #151621;
+    color: #e0e2f0;
+}
+
+.view:selected {
+    background-color: #26283a;
+    color: #4fd6ff;
+}
+
+scrollbar {
+    background-color: #1e2030;
+}
+
+scrollbar slider {
+    background-color: #2a2c3c;
+    border: 1px solid #3d4058;
+    min-width: 12px;
+    min-height: 12px;
+}
+
+scrollbar slider:hover {
+    background-color: #3d4058;
+}
+
+entry {
+    background-color: #1e2030;
+    color: #e0e2f0;
+    border: 1px solid #2a2c3c;
+    padding: 6px;
+}
+
+entry:focus {
+    border: 2px solid #4fd6ff;
+}
+
+button {
+    background-color: #26283a;
+    color: #e0e2f0;
+    border: 1px solid #2a2c3c;
+    padding: 6px 12px;
+}
+
+button:hover {
+    background-color: #3d4058;
+    color: #e0e2f0;
+}
+
+button:active {
+    background-color: #4fd6ff;
+    color: #151621;
+}
+
+popover {
+    background-color: #1e2030;
+    border: 2px solid #2a2c3c;
+}
+
+popover modelbutton {
+    background-color: transparent;
+    color: #e0e2f0;
+    padding: 6px 12px;
+}
+
+popover modelbutton:hover {
+    background-color: #26283a;
+    color: #e0e2f0;
+}

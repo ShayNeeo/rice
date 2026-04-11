@@ -1,0 +1,72 @@
+/* Rofi dmenu — keybind cheatsheet (cartoon-shell, Nerd icons in rows) */
+* {
+    font: "JetBrainsMono Nerd Font 12";
+}
+
+window {
+    width: 840px;
+    height: 72%;
+    border: 2px;
+    border-color: #2a2c3c;
+    border-radius: 8px;
+    background-color: #151621;
+    padding: 12px;
+}
+
+mainbox {
+    background-color: #151621;
+}
+
+inputbar {
+    background-color: #1e2030;
+    border: 2px;
+    border-color: #4fd6ff;
+    border-radius: 6px;
+    text-color: #e0e2f0;
+    padding: 10px;
+    margin: 0 0 12px 0;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    background-color: transparent;
+    text-color: #4fd6ff;
+    padding: 6px;
+}
+
+entry {
+    background-color: transparent;
+    text-color: #e0e2f0;
+    padding: 6px;
+}
+
+listview {
+    background-color: #151621;
+    scrollbar: false;
+}
+
+/* Text only — Rofi otherwise reserves element-icon and treats column 1 as an image path (white box). */
+element {
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px;
+    border-color: #2a2c3c;
+    background-color: #1e2030;
+    text-color: #e0e2f0;
+    children: [ element-text ];
+}
+
+element-icon {
+    size: 0px;
+}
+
+element selected {
+    background-color: #26283a;
+    border-color: #4fd6ff;
+    text-color: #4fd6ff;
+}
+
+element-text {
+    background-color: inherit;
+    text-color: inherit;
+}

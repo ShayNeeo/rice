@@ -1,0 +1,51 @@
+/* wlogout — power-saver: no rounding, no alpha, no effects */
+
+* {
+    background-image: none;
+    font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", monospace;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+window {
+    background-color: #151621;
+}
+
+button {
+    background-color: #1e2030;
+    border: 2px solid #2a2c3c;
+    color: #e0e2f0;
+    margin: 10px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 25%;
+    min-width: 150px;
+    min-height: 150px;
+}
+
+button:focus, button:active, button:hover {
+    background-color: #26283a;
+    border: 2px solid #4fd6ff;
+    color: #4fd6ff;
+    outline-style: none;
+}
+
+#lock {
+    background-image: image(url("/usr/share/wlogout/icons/lock.png"));
+}
+
+#logout {
+    background-image: image(url("/usr/share/wlogout/icons/logout.png"));
+}
+
+#suspend {
+    background-image: image(url("/usr/share/wlogout/icons/suspend.png"));
+}
+
+#reboot {
+    background-image: image(url("/usr/share/wlogout/icons/reboot.png"));
+}
+
+#shutdown {
+    background-image: image(url("/usr/share/wlogout/icons/shutdown.png"));
+}

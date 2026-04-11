@@ -1,0 +1,71 @@
+/* Wofi — Power-saver: no rounding, no shadow, no alpha */
+
+window {
+    margin: 0px;
+    border: 2px solid #2a2c3c;
+    background-color: #151621;
+    font-family: "JetBrainsMono Nerd Font", "JetBrains Mono", "Terminus", monospace;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+#input {
+    background-color: #1e2030;
+    color: #e0e2f0;
+    border: 2px solid #4fd6ff;
+    padding: 10px 14px;
+    margin: 10px;
+    outline: none;
+    caret-color: #4fd6ff;
+}
+
+#input:focus {
+    border-color: #ffcc66;
+    background-color: #26283a;
+}
+
+#inner-box {
+    margin: 4px 10px 10px 10px;
+    padding: 0;
+    background-color: #151621;
+}
+
+#outer-box {
+    margin: 0px;
+    padding: 0;
+    background-color: #151621;
+}
+
+#scroll {
+    margin: 0px;
+    border: none;
+}
+
+#entry {
+    padding: 8px 12px;
+    margin: 3px 0px;
+    background-color: #1e2030;
+    color: #e0e2f0;
+    border: 1px solid #2a2c3c;
+}
+
+#entry:hover {
+    background-color: #26283a;
+    border-color: #3d4058;
+    color: #e0e2f0;
+}
+
+#entry:selected {
+    background-color: #26283a;
+    color: #4fd6ff;
+    border: 1px solid #4fd6ff;
+}
+
+#text {
+    padding: 0;
+    margin: 0;
+}
+
+img {
+    margin-right: 8px;
+}

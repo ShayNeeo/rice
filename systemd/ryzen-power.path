@@ -1,0 +1,9 @@
+[Unit]
+Description=Trigger ryzen-power on platform_profile change
+
+[Path]
+PathChanged=/sys/firmware/acpi/platform_profile
+Unit=ryzen-power.service
+
+[Install]
+WantedBy=multi-user.target
