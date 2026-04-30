@@ -334,7 +334,19 @@ $AUR_HELPER -S --needed --noconfirm github-copilot-cli-bin || {
     echo -e "${YELLOW}   WARNING: github-copilot-cli-bin install failed, continuing...${NC}"
 }
 
-# Text Editor (notepadnext)
+# Install antigravity-bin
+echo "   Installing antigravity-bin..."
+$AUR_HELPER -S --needed --noconfirm antigravity-bin || {
+    echo -e "${YELLOW}   WARNING: antigravity-bin install failed, continuing...${NC}"
+}
+
+# Install Zed Editor (main editor)
+echo "   Installing Zed Editor..."
+$AUR_HELPER -S --needed --noconfirm zed || {
+    echo -e "${YELLOW}   WARNING: Zed install failed, continuing...${NC}"
+}
+
+# Text Editor (notepadnext - kept as alternative)
 echo "   Installing notepadnext..."
 $AUR_HELPER -S --needed --noconfirm notepadnext-bin || {
     echo -e "${YELLOW}   ⚠️  notepadnext not found, using nano as fallback${NC}"
@@ -603,8 +615,7 @@ sudo pacman -S --needed --noconfirm nodejs npm bun
 echo "   Installing Gemini CLI..."
 if ! command -v gemini >/dev/null 2>&1; then
     # Install globally without sudo to avoid permission issues
-    npm config set prefix "$HOME/.local"
-    npm install -g @google/gemini-cli
+    bun install -g @google/gemini-cli
     echo -e "   ${GREEN}✓${NC} Installed Gemini CLI"
 else
     echo "   Gemini CLI already installed"
@@ -1269,11 +1280,7 @@ is_agent_env=0
 [[ -n "${ANTIGRAVITY_AGENT:-}" ]] && is_agent_env=1
 [[ -n "${AGENT_ENVIRONMENT:-}" ]] && is_agent_env=1
 [[ -n "${CI:-}" ]] && is_agent_env=1
-[[ "${TERM_PROGRAM:-}" == "vscode" ]] && is_agent_env=1
-[[ "${TERM_PROGRAM:-}" == "cursor" ]] && is_agent_env=1
 [[ "${TERM_PROGRAM:-}" =~ (copilot|github|agent) ]] && is_agent_env=1
-[[ -n "${VSCODE_IPC_HOOK:-}" ]] && is_agent_env=1
-[[ -n "${CURSOR_IPC_HOOK:-}" ]] && is_agent_env=1
 [[ -n "${GITHUB_ACTIONS:-}" ]] && is_agent_env=1
 
 if [[ "$is_agent_env" -eq 1 ]]; then
