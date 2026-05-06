@@ -1,0 +1,4 @@
+module quickshell
+Panel 1.0 Panel.qml
+Bar 1.0 Bar.qml
+PowerSaverBar 1.0 PowerSaverBar.qml

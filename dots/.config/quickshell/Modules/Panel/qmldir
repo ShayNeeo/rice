@@ -1,0 +1,4 @@
+module quickshell.Modules.Panel
+NotificationList 1.0 NotificationList.qml
+ControlSliders 1.0 ControlSliders.qml
+CalendarView 1.0 CalendarView.qml
