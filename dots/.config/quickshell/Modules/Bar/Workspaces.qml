@@ -46,7 +46,7 @@ RowLayout {
                     Behavior on height { NumberAnimation { duration: 200 } }
                     
                     // Subtle pulsing animation for active workspace
-                    SequentialAnimator on scale {
+                    SequentialAnimation on scale {
                         running: parent.visible && parent.parent.active
                         loops: Animation.Infinite
                         NumberAnimation {

@@ -11,7 +11,6 @@ import "Modules/Bar"
 ShellRoot {
     id: shellRoot
 
-
     // State
     property bool dropdownOpen: false
     property bool panelOpen: false
@@ -37,14 +36,9 @@ ShellRoot {
         Svc.DisplayManager.updateDisplayStatus()
     }
 
-    // Bar is created per-screen automatically by quickshell
-    // when PanelWindow uses anchors.top/left/right
-    Repeater {
-        model: Quickshell.screens
-        Loader {
-            source: Svc.PowerProfile.full === "power-saver" ? "PowerSaverBar.qml" : "Bar.qml"
-            onLoaded: item.screen = modelData
-        }
+    // Create one Bar per screen
+    Bar {
+        screen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
     }
 
     Panel {
@@ -55,10 +49,29 @@ ShellRoot {
         id: volumeOsd
     }
 
+    BrightnessOSD {
+        id: brightnessOsd
+    }
+
+    FnLockOSD {
+        id: fnLockOsd
+    }
+
+    AirplaneModeOSD {
+        id: airplaneModeOsd
+    }
+
     Connections {
         target: Svc.Audio
         function onChanged() {
             volumeOsd.show()
+        }
+    }
+
+    Connections {
+        target: Svc.Brightness
+        function onChanged() {
+            brightnessOsd.show()
         }
     }
 }
