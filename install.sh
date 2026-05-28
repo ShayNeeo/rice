@@ -4,6 +4,14 @@
 # Optimized for fresh installations on minimal Arch systems
 set -e
 
+# Check if blesh is loaded (causes hangs in scripts)
+if [[ -n "${BLE_VERSION:-}" ]]; then
+    echo "WARNING: blesh is loaded - this can cause script hangs."
+    echo "Re-running without blesh..."
+    SCRIPT_PATH="$(readlink -f "$0")"
+    exec env -u BLE_VERSION -u __BLE_BASHRC_GUARD bash --norc --noprofile "$SCRIPT_PATH" "$@"
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -167,6 +175,21 @@ else
     echo -e "   ${GREEN}✓ yay installed successfully${NC}"
 fi
 
+# Btrfs Fakeroot Optimization Check
+if findmnt -n -o FSTYPE -T "$HOME" | grep -q "btrfs"; then
+    echo -e "   ${BLUE}ℹ Detected Btrfs filesystem. Checking fakeroot setup...${NC}"
+    if ! pacman -Qq fakeroot-tcp >/dev/null 2>&1; then
+        echo -e "   ${YELLOW}⚠️  Standard fakeroot can crash on Btrfs file systems during copying.${NC}"
+        echo "   Installing fakeroot-tcp to resolve Btrfs metadata copying issues..."
+        sudo pacman -Rdd --noconfirm fakeroot 2>/dev/null || true
+        $AUR_HELPER -S --needed --noconfirm fakeroot-tcp
+        echo -e "   ${GREEN}✓ fakeroot-tcp installed and active.${NC}"
+    else
+        echo -e "   ${GREEN}✓ fakeroot-tcp is already active.${NC}"
+    fi
+fi
+
+
 # 4. Remove Conflicts
 echo -e "\n${BLUE}[4/6] Removing Conflicting Packages...${NC}"
 CONFLICTS=(dunst mako sway i3 dwm)
@@ -213,15 +236,22 @@ $AUR_HELPER -S --needed --noconfirm \
 
 # Wayland Utilities
 $AUR_HELPER -S --needed --noconfirm \
-    waybar \
-    rofi-wayland \
-    wofi \
+    fuzzel \
     wl-clipboard \
     cliphist \
     grim \
     slurp \
     swappy \
     wl-screenrec
+
+# Quickshell (Qt/QML shell — replaces waybar, eww, swaync)
+echo "   Installing Quickshell..."
+$AUR_HELPER -S --needed --noconfirm quickshell-git || {
+    echo -e "${YELLOW}   ⚠️  quickshell-git install failed, trying quickshell...${NC}"
+    $AUR_HELPER -S --needed --noconfirm quickshell || {
+        echo -e "${YELLOW}   ⚠️  quickshell install failed. Install manually from AUR.${NC}"
+    }
+}
 
 # Fonts (repo + AUR via yay/paru)
 $AUR_HELPER -S --needed --noconfirm \
@@ -278,15 +308,23 @@ $AUR_HELPER -S --needed --noconfirm \
 
 # File Manager and GTK
 $AUR_HELPER -S --needed --noconfirm \
-    thunar \
-    thunar-archive-plugin \
-    thunar-volman \
+    dolphin \
+    xdg-utils \
+    xdg-user-dirs \
+    archlinux-xdg-menu \
+    plasma-integration \
+    kio-fuse \
     tumbler \
     ffmpegthumbnailer \
     gvfs \
     file-roller \
     qt6ct \
     kvantum
+
+# Update MIME and desktop databases so Dolphin (& all apps) know file associations
+sudo update-mime-database /usr/share/mime 2>/dev/null || true
+sudo update-desktop-database 2>/dev/null || true
+xdg-user-dirs-update 2>/dev/null || true
 
 # Theming
 $AUR_HELPER -S --needed --noconfirm \
@@ -423,6 +461,9 @@ if [[ "$OBSIDIAN_SETUP" =~ ^[Yy]$ ]]; then
     echo "   📦 Installing $TOTAL community plugins..."
     echo ""
 
+    # Disable set -e for plugin installation (handle errors gracefully)
+    set +e
+    
     for entry in "${OBSIDIAN_PLUGINS[@]}"; do
         IFS='|' read -r plugin_id repo <<< "$entry"
         plugin_dir="$PLUGIN_DIR/$plugin_id"
@@ -436,8 +477,8 @@ if [[ "$OBSIDIAN_SETUP" =~ ^[Yy]$ ]]; then
         echo -n "     ⬇️  $plugin_id... "
         mkdir -p "$plugin_dir"
 
-        # Try GitHub releases first
-        release_json=$(curl -sL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null || echo "{}")
+        # Try GitHub releases first (with timeout)
+        release_json=$(curl -sL --max-time 10 "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null || echo "{}")
         main_url=$(echo "$release_json" | python3 -c "
 import sys,json
 try:
@@ -446,10 +487,10 @@ try:
 except: pass
 " 2>/dev/null)
 
-        # Fallback: raw from default branch
+        # Fallback: raw from default branch (with timeout)
         if [ -z "$main_url" ]; then
             branch="master"
-            curl -sI "https://raw.githubusercontent.com/$repo/main/main.js" 2>/dev/null | head -1 | grep -q "200" && branch="main"
+            curl -sI --max-time 5 "https://raw.githubusercontent.com/$repo/main/main.js" 2>/dev/null | head -1 | grep -q "200" && branch="main"
             # Special case: agentfiles uses refs/heads/main
             if [ "$plugin_id" = "agentfiles" ]; then
                 branch="refs/heads/main"
@@ -460,9 +501,9 @@ except: pass
         fi
 
         ok=true
-        curl -sL -o "$plugin_dir/main.js" "$main_url" 2>/dev/null || ok=false
-        [ -n "$manifest_url" ] && curl -sL -o "$plugin_dir/manifest.json" "$manifest_url" 2>/dev/null || true
-        [ -n "$styles_url" ] && curl -sL -o "$plugin_dir/styles.css" "$styles_url" 2>/dev/null || true
+        curl -sL --max-time 15 -o "$plugin_dir/main.js" "$main_url" 2>/dev/null || ok=false
+        [ -n "$manifest_url" ] && curl -sL --max-time 10 -o "$plugin_dir/manifest.json" "$manifest_url" 2>/dev/null || true
+        [ -n "$styles_url" ] && curl -sL --max-time 10 -o "$plugin_dir/styles.css" "$styles_url" 2>/dev/null || true
 
         if [ "$ok" = true ] && [ -s "$plugin_dir/main.js" ] && ! head -1 "$plugin_dir/main.js" | grep -qi "404"; then
             echo "✅"
@@ -607,6 +648,71 @@ PY
     fi
 fi
 
+# --- Default MIME Type Associations ---
+echo -e "\n${BLUE}[MIME] Setting default file associations...${NC}"
+
+# Ensure XDG menu structure exists (required for Dolphin/KIO to index apps)
+mkdir -p "$HOME/.config/menus"
+if [ -f "/etc/xdg/menus/arch-applications.menu" ]; then
+    echo "   Symlinking system arch-applications.menu for Dolphin..."
+    ln -sf /etc/xdg/menus/arch-applications.menu "$HOME/.config/menus/arch-applications.menu"
+else
+    if [ ! -f "$HOME/.config/menus/arch-applications.menu" ]; then
+        echo "   Creating fallback minimal XDG arch-applications.menu..."
+        cat > "$HOME/.config/menus/arch-applications.menu" <<EOF
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+ "http://www.freedesktop.org/standards/menu-spec/1.0/menu.dtd">
+<Menu>
+  <Name>Applications</Name>
+  <Include>
+    <All/>
+  </Include>
+</Menu>
+EOF
+    fi
+fi
+
+# Use the installed office suite for document types (if one was chosen)
+if [ "$OFFICE_SUITE" = "L" ]; then
+    xdg-mime default libreoffice-writer.desktop application/msword application/vnd.openxmlformats-officedocument.wordprocessingml.document application/vnd.openxmlformats-officedocument.wordprocessingml.template 2>/dev/null || true
+    xdg-mime default libreoffice-calc.desktop application/vnd.openxmlformats-officedocument.spreadsheetml.sheet 2>/dev/null || true
+    xdg-mime default libreoffice-impress.desktop application/vnd.openxmlformats-officedocument.presentationml.presentation 2>/dev/null || true
+    xdg-mime default libreoffice-writer.desktop application/vnd.oasis.opendocument.text 2>/dev/null || true
+    xdg-mime default libreoffice-calc.desktop application/vnd.oasis.opendocument.spreadsheet 2>/dev/null || true
+    xdg-mime default libreoffice-impress.desktop application/vnd.oasis.opendocument.presentation 2>/dev/null || true
+fi
+
+# Default editor for plain text
+xdg-mime default NotepadNext.desktop text/plain 2>/dev/null || true
+xdg-mime default NotepadNext.desktop application/json text/csv text/xml text/yaml 2>/dev/null || true
+
+# PDF — prefer browser (Zen or Floorp) as PDF viewer
+if command -v zen-browser >/dev/null 2>&1; then
+    xdg-mime default zen.desktop application/pdf 2>/dev/null || true
+elif command -v floorp >/dev/null 2>&1; then
+    xdg-mime default floorp.desktop application/pdf 2>/dev/null || true
+fi
+
+# Browser
+xdg-mime default floorp.desktop text/html x-scheme-handler/http x-scheme-handler/https x-scheme-handler/chrome 2>/dev/null || true
+
+# Archive files
+xdg-mime default org.gnome.FileRoller.desktop application/zip 2>/dev/null || true
+
+# Remove redundant mimeapps.list that can cause conflicts with ~/.config/mimeapps.list
+rm -f "$HOME/.local/share/applications/mimeapps.list"
+
+# Update databases
+update-mime-database "$HOME/.local/share/mime" 2>/dev/null || true
+update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+
+# Rebuild KDE service cache with explicit paths
+export XDG_DATA_DIRS="$HOME/.local/share:/usr/local/share:/usr/share"
+export XDG_MENU_PREFIX="arch-"
+kbuildsycoca6 --noincremental 2>/dev/null || kbuildsycoca5 --noincremental 2>/dev/null || true
+
+echo -e "   ${GREEN}✓${NC} MIME associations and XDG menus configured"
+
 # Node.js, Bun and Development Tools
 echo "   Installing Node.js, Bun, and development tools..."
 sudo pacman -S --needed --noconfirm nodejs npm bun
@@ -664,7 +770,7 @@ grep -q 'AuthenticAMD' /proc/cpuinfo 2>/dev/null && CPU_IS_AMD=1
 
 if [ "$HAS_INTEL_GPU" -eq 1 ] && [ "$HAS_AMD_GPU" -eq 1 ]; then
     echo "   Intel + AMD hybrid (e.g. Ideapad 500-15ISK): Installing drivers & monitoring tools..."
-    
+
     # Drivers for Hardware Acceleration and Vulkan
     # Note: libva-mesa-driver is now provided by the 'mesa' package
     sudo pacman -S --needed --noconfirm \
@@ -699,14 +805,7 @@ else
     echo -e "   ${YELLOW}⚠️  No specific GPU detected, skipping GPU monitoring tools${NC}"
 fi
 
-# Notification (SwayNotificationCenter; prefer repo, fallback to AUR git)
-echo "   Installing notification center (swaync)..."
-if ! sudo pacman -S --needed --noconfirm swaync 2>/dev/null; then
-    echo -e "   ${YELLOW}⚠️  swaync (repo) not available, trying AUR swaync-git...${NC}"
-    $AUR_HELPER -S --needed --noconfirm swaync-git || {
-        echo -e "   ${YELLOW}⚠️  swaync install failed, notifications will be limited until you install it manually${NC}"
-    }
-fi
+# Notification center — handled by quickshell's built-in NotificationServer (no separate package needed)
 
 # Display Manager (SDDM)
 echo "   Installing SDDM display manager..."
@@ -951,7 +1050,7 @@ if [ ! -f "$HOME/.config/hypr/custom/monitors.conf" ]; then
 #   monitor=DP-1,1920x1080@144,0x0,1
 #   monitor=HDMI-A-1,2560x1440@60,1920x0,1
 #   monitor=eDP-1,preferred,auto,1.5  # Laptop with scaling
-# 
+#
 # List your monitors: hyprctl monitors
 CUSTOM_EOF
 fi
@@ -1039,29 +1138,20 @@ if [ -n "$CHOSEN_BROWSER_BIN" ] && [ -f "$HOME/.config/hypr/hyprland.conf" ]; th
     echo -e "   ${GREEN}✓${NC} Updated hyprland.conf (and keybinds.conf) for $CHOSEN_BROWSER_BIN"
 fi
 
-echo "   Installing Waybar config..."
-install_config "$SCRIPT_DIR/dots/.config/waybar" "$HOME/.config/waybar"
+echo "   Installing Quickshell config..."
+install_config "$SCRIPT_DIR/dots/.config/quickshell" "$HOME/.config/quickshell"
 
-# Make waybar scripts executable
-if [ -d "$HOME/.config/waybar/scripts" ]; then
-    chmod +x "$HOME/.config/waybar/scripts/"*.sh 2>/dev/null || true
-    echo -e "   ${GREEN}✓${NC} Made waybar scripts executable"
+# Make quickshell scripts executable
+if [ -d "$HOME/.config/quickshell/scripts" ]; then
+    chmod +x "$HOME/.config/quickshell/scripts/"*.sh 2>/dev/null || true
+    echo -e "   ${GREEN}✓${NC} Made quickshell scripts executable"
 fi
 
 echo "   Installing Ghostty config..."
 install_config "$SCRIPT_DIR/dots/.config/ghostty" "$HOME/.config/ghostty"
 
-echo "   Installing Wofi config..."
-install_config "$SCRIPT_DIR/dots/.config/wofi" "$HOME/.config/wofi"
-
-echo "   Installing Rofi config..."
-install_config "$SCRIPT_DIR/dots/.config/rofi" "$HOME/.config/rofi"
-
 echo "   Installing Wlogout config..."
 install_config "$SCRIPT_DIR/dots/.config/wlogout" "$HOME/.config/wlogout"
-
-echo "   Installing SwayNC config..."
-install_config "$SCRIPT_DIR/dots/.config/swaync" "$HOME/.config/swaync"
 
 echo "   Installing GTK configs..."
 install_config "$SCRIPT_DIR/dots/.config/gtk-3.0" "$HOME/.config/gtk-3.0"
@@ -1163,6 +1253,11 @@ if [ -d "$SCRIPT_DIR/systemd/user" ]; then
         [ -f "$unit" ] && cp "$unit" "$HOME/.config/systemd/user/" && echo -e "   ${GREEN}✓${NC} Installed $(basename "$unit")"
     done
     systemctl --user daemon-reload 2>/dev/null || true
+    # Enable quickshell auto-start
+    if systemctl --user enable quickshell.service 2>/dev/null; then
+        systemctl --user start quickshell.service 2>/dev/null || true
+        echo -e "   ${GREEN}✓${NC} Enabled quickshell.service (auto-start on login)"
+    fi
     if systemctl --user enable conditional-suspend.timer 2>/dev/null; then
         systemctl --user start conditional-suspend.timer 2>/dev/null || true
         echo -e "   ${GREEN}✓${NC} Enabled conditional-suspend.timer (polls every 2min)"
@@ -1181,25 +1276,32 @@ fi
 # Dynamic Theme Switching (power-saver vs cartoon-shell based on power profile)
 echo "   Installing dynamic theme switching..."
 if [ -f "$SCRIPT_DIR/scripts/theme-switcher.sh" ]; then
+if [ -f "$SCRIPT_DIR/scripts/screenshot-region" ]; then
+    cp "$SCRIPT_DIR/scripts/screenshot-region" "$HOME/.local/bin/screenshot-region"
+    chmod +x "$HOME/.local/bin/screenshot-region"
+    echo -e "   ${GREEN}✓${NC} Installed screenshot-region (grim+slurp wrapper)"
+fi
     cp "$SCRIPT_DIR/scripts/theme-switcher.sh" "$HOME/.local/bin/theme-switcher.sh"
     chmod +x "$HOME/.local/bin/theme-switcher.sh"
     echo -e "   ${GREEN}✓${NC} Installed theme-switcher.sh"
 fi
 
-# Install both theme trees to /opt/pixel-rice/themes/
+# Install both theme trees to a user-owned cache so theme switching can use
+# atomic symlink swaps instead of repeatedly copying configs.
 if [ -d "$SCRIPT_DIR/dots" ] && [ -d "$SCRIPT_DIR/dots-power-saver" ]; then
-    echo "   Installing theme trees to /opt/pixel-rice/themes/..."
-    sudo mkdir -p /opt/pixel-rice/themes
+    THEME_CACHE="${XDG_DATA_HOME:-$HOME/.local/share}/pixel-rice/themes"
+    echo "   Installing theme trees to $THEME_CACHE..."
+    mkdir -p "$THEME_CACHE"
 
     # cartoon-shell (balanced / performance)
-    sudo rm -rf /opt/pixel-rice/themes/cartoon-shell
-    sudo cp -a "$SCRIPT_DIR/dots" /opt/pixel-rice/themes/cartoon-shell
+    rm -rf "$THEME_CACHE/cartoon-shell"
+    cp -a "$SCRIPT_DIR/dots" "$THEME_CACHE/cartoon-shell"
 
     # power-saver (zero effects, max performance)
-    sudo rm -rf /opt/pixel-rice/themes/power-saver
-    sudo cp -a "$SCRIPT_DIR/dots-power-saver" /opt/pixel-rice/themes/power-saver
+    rm -rf "$THEME_CACHE/power-saver"
+    cp -a "$SCRIPT_DIR/dots-power-saver" "$THEME_CACHE/power-saver"
 
-    sudo chmod -R 755 /opt/pixel-rice/themes
+    chmod -R u+rwX,go+rX "$THEME_CACHE"
     echo -e "   ${GREEN}✓${NC} Installed cartoon-shell and power-saver theme trees"
 fi
 
@@ -1216,7 +1318,7 @@ if [ -d "$SCRIPT_DIR/sddm-theme" ]; then
     echo "   Installing SDDM theme..."
     sudo mkdir -p /usr/share/sddm/themes/pixel
     sudo cp -r "$SCRIPT_DIR/sddm-theme/"* /usr/share/sddm/themes/pixel/
-    
+
     # Create default background if not exists
     if [ ! -f "/usr/share/sddm/themes/pixel/background.png" ]; then
         # Create a simple gradient background
@@ -1225,7 +1327,7 @@ if [ -d "$SCRIPT_DIR/sddm-theme" ]; then
             /usr/share/sddm/themes/pixel/background.png 2>/dev/null || \
         sudo cp /usr/share/pixmaps/archlinux-logo.png /usr/share/sddm/themes/pixel/background.png 2>/dev/null || true
     fi
-    
+
     # Configure SDDM to use the theme
     sudo mkdir -p /etc/sddm.conf.d
     sudo tee /etc/sddm.conf.d/theme.conf > /dev/null <<EOF
@@ -1246,11 +1348,11 @@ EnableHiDPI=true
 # Use X11 for SDDM greeter (more stable)
 DisplayServer=x11
 EOF
-    
+
     # Set correct permissions on theme directory
     sudo chown -R sddm:sddm /usr/share/sddm/themes/pixel
     sudo chmod -R 755 /usr/share/sddm/themes/pixel
-    
+
     echo -e "   ${GREEN}✓${NC} Installed SDDM theme"
 fi
 

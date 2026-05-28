@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Pixel Rice repo: screenshot wrapper installed to ~/.local/bin
+export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+# Ensure WAYLAND_DISPLAY if missing (best-effort)
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
+grim -g "$(slurp)" - | wl-copy
