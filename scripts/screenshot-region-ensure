@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# installer helper to deploy the ensure script and autostart .desktop
+cp "${SCRIPT_DIR}/scripts/screenshot-region-ensure" "$HOME/.local/bin/screenshot-region-ensure" 2>/dev/null || true
+chmod +x "$HOME/.local/bin/screenshot-region-ensure" 2>/dev/null || true
+mkdir -p "$HOME/.config/autostart"
+cp "${SCRIPT_DIR}/scripts/screenshot-region-ensure.desktop" "$HOME/.config/autostart/screenshot-region-ensure.desktop" 2>/dev/null || true
