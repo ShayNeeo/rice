@@ -1258,6 +1258,17 @@ if [ -d "$SCRIPT_DIR/systemd/user" ]; then
         systemctl --user start quickshell.service 2>/dev/null || true
         echo -e "   ${GREEN}✓${NC} Enabled quickshell.service (auto-start on login)"
     fi
+    
+    # Deploy quickshell resume hook (restart after suspend/resume)
+    if [ -f "$SCRIPT_DIR/dots/.config/systemd/user/quickshell-resume.service" ]; then
+        mkdir -p ~/.config/systemd/user
+        cp "$SCRIPT_DIR/dots/.config/systemd/user/quickshell-resume.service" ~/.config/systemd/user/
+        if systemctl --user enable quickshell-resume.service 2>/dev/null; then
+            systemctl --user daemon-reload 2>/dev/null || true
+            echo -e "   ${GREEN}✓${NC} Enabled quickshell-resume.service (auto-restart after suspend)"
+        fi
+    fi
+    
     if systemctl --user enable conditional-suspend.timer 2>/dev/null; then
         systemctl --user start conditional-suspend.timer 2>/dev/null || true
         echo -e "   ${GREEN}✓${NC} Enabled conditional-suspend.timer (polls every 2min)"
@@ -1280,6 +1291,12 @@ if [ -f "$SCRIPT_DIR/scripts/screenshot-region" ]; then
     cp "$SCRIPT_DIR/scripts/screenshot-region" "$HOME/.local/bin/screenshot-region"
     chmod +x "$HOME/.local/bin/screenshot-region"
     echo -e "   ${GREEN}✓${NC} Installed screenshot-region (grim+slurp wrapper)"
+if [ -f "$SCRIPT_DIR/scripts/screenshot-region-ensure" ]; then
+    cp "$SCRIPT_DIR/scripts/screenshot-region-ensure" "$HOME/.local/bin/screenshot-region-ensure"
+    chmod +x "$HOME/.local/bin/screenshot-region-ensure"
+    cp "$SCRIPT_DIR/scripts/screenshot-region-ensure.desktop" "$HOME/.config/autostart/screenshot-region-ensure.desktop" 2>/dev/null || true
+    echo -e "   ${GREEN}✓${NC} Installed screenshot-region autostart ensure script"
+fi
 fi
     cp "$SCRIPT_DIR/scripts/theme-switcher.sh" "$HOME/.local/bin/theme-switcher.sh"
     chmod +x "$HOME/.local/bin/theme-switcher.sh"
