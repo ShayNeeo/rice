@@ -1,30 +1,41 @@
 #!/usr/bin/env bash
 
 # theme-switcher.sh — Switch UI theme based on current power profile.
-#   power-saver  → dots-power-saver  (zero rounding, zero effects, max performance)
-#   balanced     → dots              (cartoon-shell: 6px rounding, subtle depth)
-#   performance  → dots              (cartoon-shell)
+#   power-saver  → power-saver
+#   balanced     → cartoon-shell
+#   performance  → cartoon-shell
 #
-# Reads the current profile via powerprofilesctl, copies the matching theme tree
-# from /opt/pixel-rice/themes/ into ~/.config/, then reloads affected components.
+# Uses atomic symlink swaps against the user-owned theme cache so switching is
+# instant and does not keep rewriting config files.
 
 set -euo pipefail
 
-THEME_BASE="/opt/pixel-rice/themes"
+THEME_BASE="${XDG_DATA_HOME:-$HOME/.local/share}/pixel-rice/themes"
 CONFIG_DIR="$HOME/.config"
+HYPR_FILES=(hyprland.conf keybinds.conf hypridle.conf hyprlock.conf hyprpaper.conf)
+
+link_file() {
+    local src="$1"
+    local dst="$2"
+    mkdir -p "$(dirname "$dst")"
+    ln -sfn "$src" "$dst"
+}
 
 reload_ui() {
-    # Waybar: kill and let exec-once restart it, or send SIGUSR2 for config reload
-    if pidof waybar >/dev/null 2>&1; then
-        killall -SIGUSR2 waybar 2>/dev/null || true
+    if pgrep -x quickshell >/dev/null 2>&1; then
+        pkill -x quickshell 2>/dev/null || true
+        for i in {1..20}; do
+            if ! pgrep -x quickshell >/dev/null 2>&1; then
+                break
+            fi
+            sleep 0.02
+        done
     fi
 
-    # SwayNC: reload theme
-    if pidof swaync >/dev/null 2>&1; then
-        swaync-client -R 2>/dev/null || true
-    fi
+    export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+    export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
+    nohup quickshell >/dev/null 2>&1 &
 
-    # Hyprland: reload config (picks up decoration rounding changes)
     if command -v hyprctl >/dev/null 2>&1; then
         hyprctl reload 2>/dev/null || true
     fi
@@ -41,27 +52,22 @@ apply_theme() {
 
     echo "[theme-switcher] Applying theme: $label"
 
-    # Copy themed configs (rsync if available, else cp)
-    if command -v rsync >/dev/null 2>&1; then
-        rsync -a "$src/.config/" "$CONFIG_DIR/"
-    else
-        # cp with overwrite
-        cp -a "$src/.config/." "$CONFIG_DIR/"
-    fi
+    rm -rf "$CONFIG_DIR/quickshell"
+    ln -s "$src/.config/quickshell" "$CONFIG_DIR/quickshell"
 
-    # Make waybar scripts executable
-    chmod +x "$CONFIG_DIR/waybar/scripts/"*.sh 2>/dev/null || true
-
-    # Set GTK CSS — copy gtk.css into place
-    # (already done by rsync/cp above)
+    mkdir -p "$CONFIG_DIR/hypr"
+    for file in "${HYPR_FILES[@]}"; do
+        link_file "$src/.config/hypr/$file" "$CONFIG_DIR/hypr/$file"
+    done
 
     reload_ui
     echo "[theme-switcher] ✓ $label applied"
 }
 
-# Determine current power profile
 PROFILE=""
-if command -v powerprofilesctl >/dev/null 2>&1; then
+if [ $# -gt 0 ] && [ -n "$1" ]; then
+    PROFILE="$1"
+elif command -v powerprofilesctl >/dev/null 2>&1; then
     PROFILE=$(powerprofilesctl get 2>/dev/null || echo "")
 fi
 

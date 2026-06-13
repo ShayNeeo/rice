@@ -6,46 +6,63 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 import "services" as Svc
-import "Theme.qml" as Theme
 import "Modules/Bar"
 
 PanelWindow {
     id: barWindow
-    
-    property var screen
+
+    readonly property string bg: "#0f101b"
+    readonly property string surface: "#1c1e30"
+    readonly property string surfaceHover: "#26283a"
+    readonly property string border: "#2e3048"
+    readonly property string borderAccent: "#4fd6ff4d"
+    readonly property string accentFaint: "#4fd6ff26"
+    readonly property string cyan: "#4fd6ff"
+    readonly property string yellow: "#ffcc66"
+    readonly property string green: "#9ee8b8"
+    readonly property string red: "#ff6b6b"
+    readonly property string purple: "#cdb7ff"
+    readonly property string blue: "#7ec8ff"
+    readonly property string pink: "#a0b8ff"
+    readonly property string textColor: "#dde0f0"
+    readonly property string textMuted: "#6a6e8a"
+    readonly property string textDim: "#7a7e9a"
+    readonly property int barH: 38
+    readonly property int pillH: 28
+    readonly property int pillR: 10
+    readonly property int wsH: 26
+    readonly property int wsR: 8
 
     anchors {
-
         top: true
         left: true
         right: true
     }
 
-    exclusiveZone: Theme.barHeight
+    exclusiveZone: barH
     WlrLayershell.namespace: "quickshell-bar"
     aboveWindows: true
     focusable: false
-    implicitHeight: Theme.barHeight
+    implicitHeight: barH
+    color: "#00000000"
 
-    color: Theme.bg
+    Workspaces {
+        id: leftWidgets
+        anchors.left: parent.left
+        anchors.leftMargin: 12
+        anchors.verticalCenter: parent.verticalCenter
+    }
 
-    RowLayout {
-        anchors.fill: parent
-        anchors.leftMargin: 10
-        anchors.rightMargin: 10
-        spacing: 4
+    Clock {
+        id: centerWidgets
+        anchors.centerIn: parent
+    }
 
-        Workspaces {
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignLeft
-        }
-        Clock {
-            Layout.alignment: Qt.AlignHCenter
-        }
-        StatusPills {
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignRight
-        }
+    StatusPills {
+        id: rightWidgets
+        anchors.right: parent.right
+        anchors.rightMargin: 12
+        anchors.verticalCenter: parent.verticalCenter
     }
 
     Rectangle {
@@ -58,9 +75,9 @@ PanelWindow {
         width: 350
         height: notifContent.implicitHeight + 24
         radius: 12
-        color: Theme.surface
+        color: surface
         border.width: 1
-        border.color: Theme.borderAccent
+        border.color: borderAccent
         z: 100
 
         property string summary: ""
@@ -94,24 +111,24 @@ PanelWindow {
                 Layout.fillWidth: true
                 spacing: 8
                 Text {
-                    text: "󰎟"
+                    text: "\uDB80\uDE9F"
                     font.pixelSize: 14
                     font.family: "JetBrainsMonoNL Nerd Font"
-                    color: Theme.cyan
+                    color: cyan
                 }
                 Text {
                     Layout.fillWidth: true
                     text: notifPopup.appName || "Notification"
                     font.pixelSize: 10
                     font.family: "JetBrainsMonoNL Nerd Font"
-                    color: Theme.textMuted
+                    color: textMuted
                     elide: Text.ElideRight
                 }
                 Text {
-                    text: "✕"
+                    text: "\u2715"
                     font.pixelSize: 10
                     font.family: "JetBrainsMonoNL Nerd Font"
-                    color: Theme.textDim
+                    color: textDim
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
@@ -125,7 +142,7 @@ PanelWindow {
                 font.pixelSize: 12
                 font.weight: Font.Bold
                 font.family: "JetBrainsMonoNL Nerd Font"
-                color: Theme.text
+                color: textColor
                 wrapMode: Text.WordWrap
             }
             Text {
@@ -134,7 +151,7 @@ PanelWindow {
                 text: notifPopup.body
                 font.pixelSize: 11
                 font.family: "JetBrainsMonoNL Nerd Font"
-                color: Theme.textDim
+                color: textDim
                 wrapMode: Text.WordWrap
                 maximumLineCount: 3
                 elide: Text.ElideRight

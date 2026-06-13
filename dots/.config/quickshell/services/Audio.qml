@@ -11,6 +11,9 @@ Singleton {
     property bool ready: false
     property bool muted: false
     property real volume: 0
+    property var sinks: []
+    property string currentSinkName: ""
+
     signal changed()
 
     readonly property int percentage: Math.round(volume * 100)
@@ -32,17 +35,23 @@ Singleton {
         setProc.running = true
     }
 
+    function setSink(id) {
+        sinkSwitchProc.command = ["wpctl", "set-default", id.toString()]
+        sinkSwitchProc.running = true
+    }
+
     Process { id: muteProc }
     Process { id: pavuProc }
     Process { id: setProc }
+    Process { id: sinkSwitchProc }
 
     Timer {
         interval: 1000
         running: true
         repeat: true
         onTriggered: {
-            if (!getVol.running)
-                getVol.running = true
+            if (!getVol.running) getVol.running = true
+            if (!getSinks.running) getSinks.running = true
         }
     }
 
@@ -68,6 +77,27 @@ Singleton {
                     root.muted = isMuted
                     root.changed()
                 }
+            }
+        }
+    }
+
+    Process {
+        id: getSinks
+        command: ["bash", "-c", "wpctl status | sed -n '/Sinks:/,/Sources:/p' | grep -v 'Sinks:' | grep -v 'Sources:' | grep '^  ' | sed 's/^[ *]*//'"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const lines = text.trim().split("\n").filter(l => l.length > 0)
+                const parsedSinks = lines.map(line => {
+                    const m = line.match(/^([0-9]+)\. (.*)/)
+                    if (m) {
+                        return { id: m[1], name: m[2], active: line.includes("*") }
+                    }
+                    return null
+                }).filter(s => s !== null)
+
+                root.sinks = parsedSinks
+                const active = parsedSinks.find(s => s.active)
+                if (active) root.currentSinkName = active.name
             }
         }
     }

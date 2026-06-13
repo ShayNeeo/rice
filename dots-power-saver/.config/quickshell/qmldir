@@ -1,0 +1,4 @@
+singleton Theme 1.0 Theme.qml
+Bar 1.0 Bar.qml
+Dropdown 1.0 Dropdown.qml
+NotifPopup 1.0 NotifPopup.qml

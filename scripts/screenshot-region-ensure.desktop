@@ -1,6 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Screenshot Region Ensure
-Exec=%HOME%/.local/bin/screenshot-region-ensure
-X-GNOME-Autostart-enabled=true
-NoDisplay=true

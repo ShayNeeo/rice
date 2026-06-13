@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Output RAM usage percentage
+awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} END{printf "%.0f%%\n", (t-a)/t*100}' /proc/meminfo

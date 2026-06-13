@@ -4,22 +4,22 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import "../../services" as Svc
-import "../../Theme.qml" as Theme
 
 Item {
-    Layout.fillWidth: true
-    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+    width: clockText.implicitWidth + 20
+    height: 38
 
     property bool showDate: false
 
     Text {
+        id: clockText
         anchors.centerIn: parent
         text: showDate ? Svc.Clock.date : Svc.Clock.time
         font.pixelSize: 13
         font.weight: Font.Bold
         font.family: "JetBrainsMonoNL Nerd Font"
-        color: Theme.cyan
-        
+        color: "#4fd6ff"
+
         Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
         opacity: 1.0
     }
@@ -29,22 +29,20 @@ Item {
         cursorShape: Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         hoverEnabled: true
-        
+
         onClicked: mouse => {
             if (mouse.button === Qt.LeftButton) {
                 showDate = !showDate
-                if (showDate) {
-                    dateTimer.restart()
-                }
+                if (showDate) dateTimer.restart()
             } else {
                 shellRoot.togglePanel()
             }
         }
-        
+
         onEntered: parent.scale = 1.05
         onExited: parent.scale = 1.0
     }
-    
+
     scale: 1.0
     Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
 

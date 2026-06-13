@@ -10,53 +10,39 @@ Singleton {
 
     property bool externalConnected: false
     property string builtinDisplay: "eDP-1"
-    property string externalDisplay: "HDMI-1"
-    
+    property int screenCount: 1
+
     function updateDisplayStatus() {
-        statusProc.command = ["bash", "-c",
-            "output=$(hyprctl monitors -j 2>/dev/null | jq -r '.[].name' | grep -v '^eDP'); " +
-            "[ -n \"$output\" ] && echo 'yes' || echo 'no'"
-        ]
         statusProc.running = true
     }
-    
-    function applyDisplayConfig() {
-        if (externalConnected) {
-            applyProc.command = ["bash", "-c",
-                "hyprctl keyword monitor 'eDP-1,preferred,auto,1,mirror,HDMI-1' 2>/dev/null || " +
-                "hyprctl keyword monitor 'eDP-1,disabled' 2>/dev/null"
-            ]
-        } else {
-            applyProc.command = ["bash", "-c",
-                "hyprctl keyword monitor 'eDP-1,preferred,auto,1' 2>/dev/null"
-            ]
-        }
-        applyProc.running = true
-    }
-    
-    Process { id: statusProc }
-    Process { id: applyProc }
 
     Timer {
-        interval: 10000
+        interval: 5000
         running: true
         repeat: true
         triggeredOnStart: true
-        onTriggered: updateDisplayStatus()
+        onTriggered: {
+            if (!statusProc.running)
+                statusProc.running = true
+        }
     }
 
-    Connections {
-        target: statusProc.stdout
-        function onStreamFinished() {
-            const result = statusProc.stdout.text.trim()
-            const wasConnected = root.externalConnected
-            root.externalConnected = (result === "yes")
-            
-            if (root.externalConnected !== wasConnected) {
-                root.applyDisplayConfig()
+    Process {
+        id: statusProc
+        command: ["bash", "-c",
+            "output=$(hyprctl monitors -j 2>/dev/null); " +
+            "external=$(echo \"$output\" | jq -r '[.[].name] | map(select(. != \"eDP-1\")) | length'); " +
+            "total=$(echo \"$output\" | jq -r '. | length'); " +
+            "echo \"$external $total\""
+        ]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const parts = text.trim().split(" ")
+                if (parts.length >= 2) {
+                    root.externalConnected = parseInt(parts[0]) > 0
+                    root.screenCount = parseInt(parts[1]) || 1
+                }
             }
         }
     }
-    
-    Component.onCompleted: updateDisplayStatus()
 }

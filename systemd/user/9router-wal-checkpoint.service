@@ -1,0 +1,10 @@
+[Unit]
+Description=Checkpoint 9router SQLite WAL (non-blocking)
+# Runs 2 minutes after login, then daily, to keep the WAL file from
+# growing unbounded when 9router holds long-lived transactions.
+# Uses PRAGMA wal_checkpoint(PASSIVE) which is safe even while 9router
+# has the DB open — it only writes frames that are safe to checkpoint.
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/sqlite3 %h/.9router/db/data.sqlite "PRAGMA wal_checkpoint(PASSIVE);"

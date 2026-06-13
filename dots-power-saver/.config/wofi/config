@@ -1,8 +1,0 @@
-mode=drun
-show=drun
-width=620
-height=420
-prompt=Apps
-allow_images=true
-insensitive=true
-columns=1

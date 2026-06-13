@@ -1,0 +1,57 @@
+# /etc/sudoers.d/pixel-rice-power
+# Limited passwordless sudo for power tuning.
+# Install:  sudo install -m 0440 this-file /etc/sudoers.d/pixel-rice-power
+# Validate: sudo visudo -c -f /etc/sudoers.d/pixel-rice-power
+#
+# Sudoers syntax rules used:
+#   - One command per line; no comma-separated argument lists.
+#   - Wildcards in arguments are allowed (e.g. --stapm-limit=*).
+#   - User/Host/Runas must all be specified (Host=ALL, Runas=ALL).
+#   - No inline # comments — use a leading # on their own line.
+#
+# All commands below are idempotent, write-only to specific sysfs nodes,
+# and safe to run repeatedly. They grant:
+#   * TDP control via ryzenadj (whitelisted args)
+#   * CPU EPP / scaling_min/max / platform_profile
+#   * AMD GPU DPM
+#   * PCIe ASPM / USB autosuspend / runtime PM
+#   * NMI watchdog / VM writeback tuning
+#   * modprobe for ryzen_smu and amdgpu
+
+# --- ryzenadj TDP (one entry per allowed argument combination) ---
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/ryzenadj --stapm-limit=* --fast-limit=* --slow-limit=* --tctl-temp=* --apu-skin-temp=*
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/ryzenadj -i
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/ryzenadj --info
+
+# --- CPU EPP and frequency limits (native amd-pstate sysfs) ---
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq
+
+# --- ACPI platform profile (low-power / balanced / performance) ---
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/firmware/acpi/platform_profile
+
+# --- AMD GPU DPM state ---
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/class/drm/card*/device/power_dpm_force_performance_level
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/class/drm/card*/device/pp_dpm_sclk
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/class/drm/card*/device/pp_dpm_mclk
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/class/drm/card*/device/device/power_method
+
+# --- PCIe / USB / I2C / HDA / SATA runtime PM ---
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/module/pcie_aspm/parameters/policy
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/module/usbcore/parameters/autosuspend
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/class/scsi_host/host*/link_power_management_policy
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/bus/pci/devices/*/power/control
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/bus/i2c/devices/i2c-*/device/power/control
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/bus/hdaudio/devices/*/power/control
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/bus/usb/devices/*/power/control
+
+# --- VM / NMI tuning (saves power) ---
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /proc/sys/kernel/nmi_watchdog
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /proc/sys/vm/dirty_writeback_centisecs
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /proc/sys/vm/dirty_expire_centisecs
+shayneeo ALL=(ALL) NOPASSWD: /usr/bin/tee /proc/sys/vm/laptop_mode
+
+# --- Kernel module loading (ryzen_smu needed by ryzenadj, amdgpu for DPM) ---
+shayneeo ALL=(ALL) NOPASSWD: /usr/sbin/modprobe ryzen_smu
+shayneeo ALL=(ALL) NOPASSWD: /usr/sbin/modprobe amdgpu

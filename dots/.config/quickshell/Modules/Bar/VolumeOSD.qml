@@ -3,7 +3,6 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
-import "../../Theme.qml" as Theme
 import "../../services" as Svc
 
 PanelWindow {
@@ -12,33 +11,32 @@ PanelWindow {
     WlrLayershell.namespace: "quickshell-volume-osd"
     exclusiveZone: 0
     color: "transparent"
-    
+
     implicitWidth: 200
     implicitHeight: 60
 
     Rectangle {
-        id: pill
         x: (root.width - width) / 2
         y: (root.height - height) / 2
         width: 180
         height: 48
         radius: 24
-        color: Theme.surface
-        border.color: Theme.border
+        color: "#1c1e30"
+        border.color: "#2e3048"
         border.width: 1
 
         RowLayout {
             anchors.centerIn: parent
             spacing: 12
             Text {
-                text: Svc.Audio.muted ? "󰝟" : (Svc.Audio.percent > 66 ? "" : (Svc.Audio.percent > 33 ? "" : ""))
-                color: Svc.Audio.muted ? Theme.textMuted : Theme.blue
+                text: Svc.Audio.muted ? "\uDB80\uDDDF" : (Svc.Audio.percent > 66 ? "\uDB80\uDD7E" : (Svc.Audio.percent > 33 ? "\uDB80\uDD80" : "\uDB80\uDD81"))
+                color: Svc.Audio.muted ? "#6a6e8a" : "#7ec8ff"
                 font.pixelSize: 20
                 font.family: "JetBrainsMonoNL Nerd Font"
             }
             Text {
                 text: Svc.Audio.percent + "%"
-                color: Theme.text
+                color: "#dde0f0"
                 font.pixelSize: 16
                 font.weight: Font.Bold
                 font.family: "JetBrainsMonoNL Nerd Font"
@@ -46,10 +44,7 @@ PanelWindow {
         }
     }
 
-    function show() {
-        visible = true
-        hideTimer.restart()
-    }
+    function show() { visible = true; hideTimer.restart() }
 
     Timer {
         id: hideTimer

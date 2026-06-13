@@ -4,148 +4,119 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import "../../services" as Svc
-import "../../Theme.qml" as Theme
 
 RowLayout {
     Layout.alignment: Qt.AlignRight
     spacing: 6
 
-    // Notifications with hover preview
-    Item {
-        implicitWidth: notifPill.width
-        implicitHeight: Theme.pillHeight
-        
-        Rectangle {
-            id: notifPill
-            anchors.fill: parent
-            implicitWidth: notifRow.implicitWidth + 20
-            height: Theme.pillHeight
-            radius: Theme.pillRadius
-            color: notifMouseArea.containsPress ? Theme.surfaceHover : Theme.surface
-            border.width: 1
-            border.color: Svc.NotifStatus.hasNotifs ? Theme.yellow : Theme.border
+    property string surface: "#1c1e30"
+    property string surfaceHover: "#26283a"
+    property string border: "#2e3048"
+    property string cyan: "#4fd6ff"
+    property string yellow: "#ffcc66"
+    property string green: "#9ee8b8"
+    property string red: "#ff6b6b"
+    property string purple: "#cdb7ff"
+    property string blue: "#7ec8ff"
+    property string pink: "#a0b8ff"
+    property string textMuted: "#6a6e8a"
+    property string textDim: "#7a7e9a"
+    property string textColor: "#dde0f0"
+    property int pillH: 28
+    property int pillR: 10
 
-            scale: notifMouseArea.containsMouse ? 1.05 : 1.0
-            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
-            Behavior on color { ColorAnimation { duration: 150 } }
+    // ---- Notifications ----
+    Rectangle {
+        id: notifPill
+        implicitWidth: notifRow.implicitWidth + 14
+        height: pillH
+        radius: pillR
+        color: notifMA.containsPress ? surfaceHover : surface
+        border.width: 1
+        border.color: Svc.NotifStatus.hasNotifs ? yellow : border
+        scale: notifMA.containsMouse ? 1.05 : 1.0
+        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
+        Behavior on color { ColorAnimation { duration: 150 } }
 
-            RowLayout {
-                id: notifRow
-                anchors.centerIn: parent
-                spacing: 4
-                Text {
-                    text: Svc.NotifStatus.icon
-                    font.pixelSize: 12
-                    font.family: "JetBrainsMonoNL Nerd Font"
-                    color: Svc.NotifStatus.hasNotifs ? Theme.yellow : Theme.textMuted
-                }
-                Text {
-                    visible: Svc.NotifStatus.hasNotifs
-                    text: Math.min(Svc.NotifStatus.activeNotifications.length, 99).toString()
-                    font.pixelSize: 10
-                    font.weight: Font.Bold
-                    font.family: "JetBrainsMonoNL Nerd Font"
-                    color: Theme.yellow
-                }
+        RowLayout {
+            id: notifRow
+            anchors.centerIn: parent
+            spacing: 3
+            Text {
+                text: Svc.NotifStatus.hasNotifs ? "!" : "N"
+                font.pixelSize: 10
+                font.weight: Font.Bold
+                font.family: "JetBrainsMonoNL Nerd Font"
+                color: Svc.NotifStatus.hasNotifs ? yellow : textMuted
             }
-
-            MouseArea {
-                id: notifMouseArea
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                hoverEnabled: true
-                
-                onClicked: mouse => {
-                    if (mouse.button === Qt.RightButton) {
-                        Svc.NotifStatus.toggleDnd()
-                    } else {
-                        shellRoot.togglePanel()
-                    }
-                }
-                
-                onEntered: notifPreviewTimer.start()
-                onExited: {
-                    notifPreviewTimer.stop()
-                    notifPreview.visible = false
-                }
+            Text {
+                visible: Svc.NotifStatus.hasNotifs
+                text: Math.min(Svc.NotifStatus.count, 99).toString()
+                font.pixelSize: 10
+                font.weight: Font.Bold
+                font.family: "JetBrainsMonoNL Nerd Font"
+                color: yellow
             }
         }
-        
-        // Notification preview popup on hover
+
+        MouseArea {
+            id: notifMA
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            hoverEnabled: true
+            onClicked: shellRoot.togglePanel()
+            onEntered: notifPreviewTimer.start()
+            onExited: { notifPreviewTimer.stop(); notifPreview.visible = false }
+        }
+
         Rectangle {
             id: notifPreview
             visible: false
             anchors.top: parent.bottom
             anchors.right: parent.right
-            anchors.topMargin: 8
-            anchors.rightMargin: -8
-            width: 300
-            height: Math.min(Math.max(notifPreviewContent.implicitHeight + 20, 80), 250)
-            radius: Theme.pillRadius
-            color: Theme.surface
+            anchors.topMargin: 6
+            width: 280
+            height: Math.min(Math.max(notifPrevContent.implicitHeight + 16, 60), 200)
+            radius: pillR
+            color: surface
             border.width: 1
-            border.color: Theme.yellow
+            border.color: yellow
             z: 1000
-            
             ColumnLayout {
-                id: notifPreviewContent
+                id: notifPrevContent
                 anchors.fill: parent
-                anchors.margins: 10
-                spacing: 6
+                anchors.margins: 8
+                spacing: 4
                 clip: true
-                
                 Text {
-                    text: "Recent Notifications"
-                    font.pixelSize: 11
+                    text: "Notifications"
+                    font.pixelSize: 10
                     font.weight: Font.Bold
                     font.family: "JetBrainsMonoNL Nerd Font"
-                    color: Theme.yellow
+                    color: yellow
                 }
-                
                 ListView {
-                    id: previewList
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     model: Svc.NotifStatus.activeNotifications.slice(0, 3)
-                    spacing: 4
+                    spacing: 3
                     clip: true
-                    
                     delegate: Item {
                         required property var modelData
                         width: parent.width
-                        height: previewText.implicitHeight + 4
-                        
-                        ColumnLayout {
+                        height: 20
+                        Text {
                             anchors.fill: parent
-                            spacing: 2
-                            
-                            Text {
-                                text: modelData.appName || "App"
-                                font.pixelSize: 9
-                                font.weight: Font.Bold
-                                font.family: "JetBrainsMonoNL Nerd Font"
-                                color: Theme.cyan
-                                Layout.fillWidth: true
-                                elide: Text.ElideRight
-                            }
-                            Text {
-                                id: previewText
-                                text: modelData.summary || ""
-                                font.pixelSize: 9
-                                font.family: "JetBrainsMonoNL Nerd Font"
-                                color: Theme.textMuted
-                                Layout.fillWidth: true
-                                wrapMode: Text.WordWrap
-                                elide: Text.ElideRight
-                                maximumLineCount: 1
-                            }
+                            text: (modelData.appName || "App") + ": " + (modelData.summary || "")
+                            font.pixelSize: 9
+                            font.family: "JetBrainsMonoNL Nerd Font"
+                            color: textDim
+                            elide: Text.ElideRight
                         }
                     }
                 }
             }
         }
-        
         Timer {
             id: notifPreviewTimer
             interval: 1500
@@ -153,17 +124,16 @@ RowLayout {
         }
     }
 
-    // Network
+    // ---- WiFi ----
     Rectangle {
         id: netPill
-        implicitWidth: netRow.implicitWidth + 20
-        height: Theme.pillHeight
-        radius: Theme.pillRadius
-        color: netMouseArea.containsPress ? Theme.surfaceHover : Theme.surface
+        implicitWidth: netRow.implicitWidth + 14
+        height: pillH
+        radius: pillR
+        color: netMA.containsPress ? surfaceHover : surface
         border.width: 1
-        border.color: Svc.Network.connected ? Theme.blue : Theme.border
-
-        scale: netMouseArea.containsMouse ? 1.05 : 1.0
+        border.color: Svc.Network.connected ? blue : border
+        scale: netMA.containsMouse ? 1.05 : 1.0
         Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
         Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -172,23 +142,30 @@ RowLayout {
             anchors.centerIn: parent
             spacing: 4
             Text {
-                text: Svc.Network.connected ? "󰖩" : "󰖪"
-                font.pixelSize: 12
+                text: {
+                    if (!Svc.Network.connected) return "x"
+                    if (Svc.Network.signal > 75) return "4"
+                    if (Svc.Network.signal > 50) return "3"
+                    if (Svc.Network.signal > 25) return "2"
+                    return "1"
+                }
+                font.pixelSize: 10
+                font.weight: Font.Bold
                 font.family: "JetBrainsMonoNL Nerd Font"
-                color: Svc.Network.connected ? Theme.blue : Theme.textMuted
+                color: Svc.Network.connected ? blue : textMuted
             }
             Text {
                 visible: Svc.Network.connected
                 text: Svc.Network.label
-                font.pixelSize: 11
+                font.pixelSize: 10
                 font.weight: Font.Bold
                 font.family: "JetBrainsMonoNL Nerd Font"
-                color: Theme.blue
+                color: blue
             }
         }
 
         MouseArea {
-            id: netMouseArea
+            id: netMA
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             hoverEnabled: true
@@ -196,29 +173,29 @@ RowLayout {
         }
     }
 
-    // Bluetooth
+    // ---- Bluetooth ----
     Rectangle {
         id: btPill
-        implicitWidth: btRow.implicitWidth + 20
-        height: Theme.pillHeight
-        radius: Theme.pillRadius
-        color: btMouseArea.containsPress ? Theme.surfaceHover : Theme.surface
+        implicitWidth: btRow.implicitWidth + 14
+        height: pillH
+        radius: pillR
+        color: btMA.containsPress ? surfaceHover : surface
         border.width: 1
-        border.color: Svc.Bluetooth.enabled ? Theme.blue : Theme.border
-
-        scale: btMouseArea.containsMouse ? 1.05 : 1.0
+        border.color: Svc.Bluetooth.enabled ? blue : border
+        scale: btMA.containsMouse ? 1.05 : 1.0
         Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
         Behavior on color { ColorAnimation { duration: 150 } }
 
         RowLayout {
             id: btRow
             anchors.centerIn: parent
-            spacing: 4
+            spacing: 3
             Text {
-                text: Svc.Bluetooth.icon
-                font.pixelSize: 12
+                text: Svc.Bluetooth.enabled ? "BT" : "--"
+                font.pixelSize: 9
+                font.weight: Font.Bold
                 font.family: "JetBrainsMonoNL Nerd Font"
-                color: Svc.Bluetooth.enabled ? Theme.blue : Theme.textMuted
+                color: Svc.Bluetooth.enabled ? blue : textMuted
             }
             Text {
                 visible: Svc.Bluetooth.enabled && Svc.Bluetooth.deviceCount > 0
@@ -226,12 +203,12 @@ RowLayout {
                 font.pixelSize: 10
                 font.weight: Font.Bold
                 font.family: "JetBrainsMonoNL Nerd Font"
-                color: Theme.blue
+                color: blue
             }
         }
 
         MouseArea {
-            id: btMouseArea
+            id: btMA
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             hoverEnabled: true
@@ -239,142 +216,203 @@ RowLayout {
         }
     }
 
-    // CPU
+    // ---- Volume ----
+    Rectangle {
+        id: volPill
+        implicitWidth: volRow.implicitWidth + 14
+        height: pillH
+        radius: pillR
+        color: volMA.containsPress ? surfaceHover : surface
+        border.width: 1
+        border.color: blue
+        scale: volMA.containsMouse ? 1.05 : 1.0
+        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
+        Behavior on color { ColorAnimation { duration: 150 } }
+
+        RowLayout {
+            id: volRow
+            anchors.centerIn: parent
+            spacing: 3
+            Text {
+                text: Svc.Audio.muted ? "M" : "V"
+                font.pixelSize: 10
+                font.weight: Font.Bold
+                font.family: "JetBrainsMonoNL Nerd Font"
+                color: Svc.Audio.muted ? textMuted : blue
+            }
+            Text {
+                text: Svc.Audio.percent + "%"
+                font.pixelSize: 10
+                font.weight: Font.Bold
+                font.family: "JetBrainsMonoNL Nerd Font"
+                color: Svc.Audio.muted ? textMuted : blue
+            }
+        }
+
+        MouseArea {
+            id: volMA
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            hoverEnabled: true
+            onClicked: Svc.Audio.toggleMute()
+            onWheel: function(wheel) {
+                if (wheel.angleDelta.y > 0) Svc.Audio.setVolume(Svc.Audio.percent + 5)
+                else Svc.Audio.setVolume(Svc.Audio.percent - 5)
+            }
+        }
+    }
+
+    // ---- CPU ----
     Rectangle {
         id: cpuPill
-        implicitWidth: cpuRow.implicitWidth + 20
-        height: Theme.pillHeight
-        radius: Theme.pillRadius
-        color: cpuMouseArea.containsPress ? Theme.surfaceHover : Theme.surface
+        implicitWidth: cpuRow.implicitWidth + 14
+        height: pillH
+        radius: pillR
+        color: cpuMA.containsPress ? surfaceHover : surface
         border.width: 1
-        border.color: Theme.purple
-
-        scale: cpuMouseArea.containsMouse ? 1.05 : 1.0
+        border.color: purple
+        scale: cpuMA.containsMouse ? 1.05 : 1.0
         Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
         Behavior on color { ColorAnimation { duration: 150 } }
 
         RowLayout {
             id: cpuRow
             anchors.centerIn: parent
-            spacing: 4
+            spacing: 3
             Text {
-                text: "󰻠"
-                font.pixelSize: 12
+                text: "C"
+                font.pixelSize: 10
+                font.weight: Font.Bold
                 font.family: "JetBrainsMonoNL Nerd Font"
-                color: Theme.purple
+                color: purple
             }
             Text {
                 text: Svc.CPU.text
-                font.pixelSize: 11
+                font.pixelSize: 10
                 font.weight: Font.Bold
                 font.family: "JetBrainsMonoNL Nerd Font"
-                color: Theme.purple
+                color: purple
             }
         }
 
         MouseArea {
-            id: cpuMouseArea
+            id: cpuMA
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             hoverEnabled: true
         }
     }
 
-    // RAM
+    // ---- RAM ----
     Rectangle {
         id: ramPill
-        implicitWidth: ramRow.implicitWidth + 20
-        height: Theme.pillHeight
-        radius: Theme.pillRadius
-        color: ramMouseArea.containsPress ? Theme.surfaceHover : Theme.surface
+        implicitWidth: ramRow.implicitWidth + 14
+        height: pillH
+        radius: pillR
+        color: ramMA.containsPress ? surfaceHover : surface
         border.width: 1
-        border.color: Theme.pink
-
-        scale: ramMouseArea.containsMouse ? 1.05 : 1.0
+        border.color: pink
+        scale: ramMA.containsMouse ? 1.05 : 1.0
         Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
         Behavior on color { ColorAnimation { duration: 150 } }
 
         RowLayout {
             id: ramRow
             anchors.centerIn: parent
-            spacing: 4
+            spacing: 3
             Text {
-                text: "󰍛"
-                font.pixelSize: 12
+                text: "R"
+                font.pixelSize: 10
+                font.weight: Font.Bold
                 font.family: "JetBrainsMonoNL Nerd Font"
-                color: Theme.pink
+                color: pink
             }
             Text {
                 text: Svc.Memory.text
-                font.pixelSize: 11
+                font.pixelSize: 10
                 font.weight: Font.Bold
                 font.family: "JetBrainsMonoNL Nerd Font"
-                color: Theme.pink
+                color: pink
             }
         }
 
         MouseArea {
-            id: ramMouseArea
+            id: ramMA
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             hoverEnabled: true
         }
     }
 
-    // Power Profile (PROMINENT)
+    // ---- Battery ----
     Rectangle {
-        id: pwrPill
-        implicitWidth: pwrRow.implicitWidth + 20
-        height: Theme.pillHeight
-        radius: Theme.pillRadius
-        color: pwrMouseArea.containsPress ? Theme.surfaceHover : Theme.surface
-        border.width: 2
-        border.color: {
-            if (Svc.PowerProfile.full === "performance") return Theme.red
-            if (Svc.PowerProfile.full === "power-saver") return Theme.green
-            return Theme.cyan
-        }
-
-        scale: pwrMouseArea.containsMouse ? 1.05 : 1.0
+        id: batPill
+        implicitWidth: batRow.implicitWidth + 14
+        height: pillH
+        radius: pillR
+        color: batMA.containsPress ? surfaceHover : surface
+        border.width: 1
+        border.color: Svc.Battery.charging ? green : (Svc.Battery.level <= 15 ? red : green)
+        scale: batMA.containsMouse ? 1.05 : 1.0
         Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
         Behavior on color { ColorAnimation { duration: 150 } }
-        Behavior on border.color { ColorAnimation { duration: 300 } }
 
         RowLayout {
-            id: pwrRow
+            id: batRow
             anchors.centerIn: parent
-            spacing: 4
+            spacing: 3
             Text {
-                text: {
-                    if (Svc.PowerProfile.full === "performance") return "󱐋"
-                    if (Svc.PowerProfile.full === "power-saver") return "󰌪"
-                    return "󰅐"
-                }
-                font.pixelSize: 12
-                font.family: "JetBrainsMonoNL Nerd Font"
-                color: {
-                    if (Svc.PowerProfile.full === "performance") return Theme.red
-                    if (Svc.PowerProfile.full === "power-saver") return Theme.green
-                    return Theme.cyan
-                }
-                Behavior on color { ColorAnimation { duration: 300 } }
-            }
-            Text {
-                text: Svc.PowerProfile.text
-                font.pixelSize: 11
+                text: Svc.Battery.charging ? "+" : "B"
+                font.pixelSize: 10
                 font.weight: Font.Bold
                 font.family: "JetBrainsMonoNL Nerd Font"
-                color: {
-                    if (Svc.PowerProfile.full === "performance") return Theme.red
-                    if (Svc.PowerProfile.full === "power-saver") return Theme.green
-                    return Theme.cyan
-                }
-                Behavior on color { ColorAnimation { duration: 300 } }
+                color: Svc.Battery.charging ? green : (Svc.Battery.level <= 15 ? red : green)
+            }
+            Text {
+                text: Svc.Battery.level + "%"
+                font.pixelSize: 10
+                font.weight: Font.Bold
+                font.family: "JetBrainsMonoNL Nerd Font"
+                color: Svc.Battery.charging ? green : (Svc.Battery.level <= 15 ? red : green)
             }
         }
 
         MouseArea {
-            id: pwrMouseArea
+            id: batMA
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            hoverEnabled: true
+        }
+    }
+
+    // ---- Power Profile ----
+    Rectangle {
+        id: profilePill
+        implicitWidth: profileRow.implicitWidth + 14
+        height: pillH
+        radius: pillR
+        color: profileMA.containsPress ? surfaceHover : surface
+        border.width: 1
+        border.color: border
+        scale: profileMA.containsMouse ? 1.05 : 1.0
+        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
+        Behavior on color { ColorAnimation { duration: 150 } }
+
+        RowLayout {
+            id: profileRow
+            anchors.centerIn: parent
+            spacing: 3
+            Text {
+                text: Svc.PowerProfile.text
+                font.pixelSize: 10
+                font.weight: Font.Bold
+                font.family: "JetBrainsMonoNL Nerd Font"
+                color: Svc.PowerProfile.full === "performance" ? red : (Svc.PowerProfile.full === "power-saver" ? green : cyan)
+            }
+        }
+
+        MouseArea {
+            id: profileMA
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             hoverEnabled: true
@@ -382,135 +420,65 @@ RowLayout {
         }
     }
 
-    // Battery
-    Rectangle {
-        id: batPill
-        implicitWidth: batRow.implicitWidth + 20
-        height: Theme.pillHeight
-        radius: Theme.pillRadius
-        color: batMouseArea.containsPress ? Theme.surfaceHover : Theme.surface
-        border.width: 1
-        border.color: Svc.Battery.status === "low" ? Theme.red : Theme.green
-
-        scale: batMouseArea.containsMouse ? 1.05 : 1.0
-        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
-        Behavior on color { ColorAnimation { duration: 150 } }
-
-        RowLayout {
-            id: batRow
-            anchors.centerIn: parent
-            spacing: 4
-            Text {
-                text: {
-                    if (Svc.Battery.charging) return "󰂄"
-                    if (Svc.Battery.status === "low") return "󰁚"
-                    return "󰁹"
+    // ---- Tray ----
+    RowLayout {
+        id: trayLayout
+        spacing: 2
+        Repeater {
+            model: Svc.Tray.apps
+            Rectangle {
+                required property string modelData
+                width: 20
+                height: 20
+                color: "transparent"
+                Text {
+                    anchors.centerIn: parent
+                    text: {
+                        switch (modelData) {
+                            case "discord": return "D"
+                            case "telegram-desktop": return "T"
+                            case "slack": return "S"
+                            case "steam": return "St"
+                            case "spotify": return "Sp"
+                            case "obs": return "O"
+                            case "nm-applet": return "N"
+                            case "blueman-applet": return "B"
+                            default: return "*"
+                        }
+                    }
+                    font.pixelSize: 9
+                    font.weight: Font.Bold
+                    font.family: "JetBrainsMonoNL Nerd Font"
+                    color: textDim
                 }
-                font.pixelSize: 12
-                font.family: "JetBrainsMonoNL Nerd Font"
-                color: Svc.Battery.charging ? Theme.green : (Svc.Battery.status === "low" ? Theme.red : Theme.green)
-            }
-            Text {
-                text: Svc.Battery.level + "%"
-                font.pixelSize: 11
-                font.weight: Font.Bold
-                font.family: "JetBrainsMonoNL Nerd Font"
-                color: Svc.Battery.charging ? Theme.green : (Svc.Battery.status === "low" ? Theme.red : Theme.green)
-            }
-        }
-
-        MouseArea {
-            id: batMouseArea
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            hoverEnabled: true
-        }
-    }
-
-    // Volume
-    Rectangle {
-        id: volPill
-        implicitWidth: volRow.implicitWidth + 20
-        height: Theme.pillHeight
-        radius: Theme.pillRadius
-        color: volMouseArea.containsPress ? Theme.surfaceHover : Theme.surface
-        border.width: 1
-        border.color: Svc.Audio.muted ? Theme.border : Theme.blue
-
-        scale: volMouseArea.containsMouse ? 1.05 : 1.0
-        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
-        Behavior on color { ColorAnimation { duration: 150 } }
-
-        RowLayout {
-            id: volRow
-            anchors.centerIn: parent
-            spacing: 4
-            Text {
-                text: Svc.Audio.muted ? "󰖁" : (Svc.Audio.percent > 66 ? "󰕾" : (Svc.Audio.percent > 33 ? "󰖀" : "󰖁"))
-                font.pixelSize: 12
-                font.family: "JetBrainsMonoNL Nerd Font"
-                color: Svc.Audio.muted ? Theme.textMuted : Theme.blue
-            }
-            Text {
-                text: Svc.Audio.percent + "%"
-                font.pixelSize: 11
-                font.weight: Font.Bold
-                font.family: "JetBrainsMonoNL Nerd Font"
-                color: Svc.Audio.muted ? Theme.textMuted : Theme.blue
-            }
-        }
-
-        MouseArea {
-            id: volMouseArea
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            acceptedButtons: Qt.LeftButton | Qt.RightButton
-            hoverEnabled: true
-            onClicked: mouse => {
-                if (mouse.button === Qt.RightButton) Svc.Audio.openControl()
-                else Svc.Audio.toggleMute()
             }
         }
     }
 
-    // Panel access indicator (far right - only shows on hover)
+    // ---- Panel access (far right, hover to reveal) ----
     Item {
-        width: 0
-        height: Theme.pillHeight
+        width: statusRowMA.containsMouse ? 28 : 0
+        height: pillH
         clip: true
-        
-        states: [
-            State {
-                name: "visible"
-                when: statusRowMouseArea.containsMouse
-                PropertyChanges { target: parent; width: 32 }
-            }
-        ]
-        
-        transitions: Transition {
-            to: "visible"
-            NumberAnimation { property: "width"; duration: 200; easing.type: Easing.InOutQuad }
-        }
+        Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
 
         Rectangle {
-            id: panelPill
-            width: 32
+            width: 28
             height: parent.height
-            radius: Theme.pillRadius
-            color: shellRoot.panelOpen ? Theme.accentMedium : Theme.surface
+            radius: pillR
+            color: shellRoot.panelOpen ? "#4fd6ff66" : surface
             border.width: 1
-            border.color: shellRoot.panelOpen ? Theme.cyan : Theme.border
-            
+            border.color: shellRoot.panelOpen ? cyan : border
             Behavior on color { ColorAnimation { duration: 150 } }
             Behavior on border.color { ColorAnimation { duration: 150 } }
 
             Text {
                 anchors.centerIn: parent
-                text: "⚙"
+                text: ">"
                 font.pixelSize: 14
+                font.weight: Font.Bold
                 font.family: "JetBrainsMonoNL Nerd Font"
-                color: shellRoot.panelOpen ? Theme.cyan : Theme.textMuted
-                Behavior on color { ColorAnimation { duration: 150 } }
+                color: shellRoot.panelOpen ? cyan : textMuted
             }
 
             MouseArea {
@@ -520,13 +488,18 @@ RowLayout {
             }
         }
     }
-    
-    MouseArea {
-        id: statusRowMouseArea
-        anchors.fill: parent
-        hoverEnabled: true
-        propagateComposedEvents: true
+
+    // Background hover zone - now just a small area for the panel trigger
+    Rectangle {
+        width: 12
+        height: pillH
+        color: "transparent"
         
-        onPositionChanged: mouse => mouse.accepted = false
+        MouseArea {
+            id: statusRowMA
+            anchors.fill: parent
+            hoverEnabled: true
+            propagateComposedEvents: true
+        }
     }
 }

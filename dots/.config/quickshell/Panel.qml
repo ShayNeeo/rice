@@ -4,93 +4,112 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
-import "Theme.qml" as Theme
 import "Modules/Panel"
 
 PanelWindow {
     id: root
-    
+
+    readonly property string panelBg: "#0f101bdf"
+    readonly property string accentFaint: "#4fd6ff26"
+
+    property real notifOffset: 20
+    property real controlsOffset: 20
+    property real calendarOffset: 20
+
+    Behavior on notifOffset { NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
+    Behavior on controlsOffset { NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
+    Behavior on calendarOffset { NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
+
     anchors {
         top: true
         right: true
     }
-    
+
     WlrLayershell.namespace: "quickshell-panel"
     implicitWidth: 400
     implicitHeight: content.implicitHeight + 24
-    
-    color: Theme.panelBg
-    
+    color: panelBg
+
     visible: shellRoot.panelOpen
-    
+
     Rectangle {
         anchors.fill: parent
         z: -1
         color: "transparent"
         border.width: 2
-        border.color: Theme.accentFaint
+        border.color: accentFaint
         radius: 12
     }
-    
+
     ColumnLayout {
         id: content
-        anchors.fill: parent
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
         anchors.margins: 12
         spacing: 20
-        
+
         NotificationList {
             id: notifList
+            Layout.fillWidth: true
             opacity: 0
-            y: 20
+            transform: Translate { y: root.notifOffset }
             Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
-            Behavior on y { NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
         }
-        
+
         ControlSliders {
             id: controls
+            Layout.fillWidth: true
             opacity: 0
-            y: 20
+            transform: Translate { y: root.controlsOffset }
             Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
-            Behavior on y { NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
         }
-        
+
         CalendarView {
             id: calendar
+            Layout.fillWidth: true
             opacity: 0
-            y: 20
+            transform: Translate { y: root.calendarOffset }
             Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
-            Behavior on y { NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
         }
     }
-    
-    Component.onCompleted: {
-        reveal()
-    }
-    
+
     onVisibleChanged: {
-        if (visible) reveal()
+        if (!visible) {
+            root.notifOffset = 20
+            root.controlsOffset = 20
+            root.calendarOffset = 20
+            notifList.opacity = 0
+            controls.opacity = 0
+            calendar.opacity = 0
+            return
+        }
+        revealTimer.start()
     }
-    
-    function reveal() {
-        notifList.opacity = 1; notifList.y = 0
-        
-        timerControls.start()
-        timerCalendar.start()
-    }
-    
+
     Timer {
-        id: timerControls
-        interval: 100
+        id: revealTimer
+        interval: 50
         onTriggered: {
-            controls.opacity = 1; controls.y = 0
+            notifList.opacity = 1; root.notifOffset = 0
+            controlsTimer.start()
         }
     }
-    
+
     Timer {
-        id: timerCalendar
-        interval: 200
+        id: controlsTimer
+        interval: 120
         onTriggered: {
-            calendar.opacity = 1; calendar.y = 0
+            controls.opacity = 1; root.controlsOffset = 0
+            calendarTimer.start()
+        }
+    }
+
+    Timer {
+        id: calendarTimer
+        interval: 120
+        onTriggered: {
+            calendar.opacity = 1; root.calendarOffset = 0
         }
     }
 }

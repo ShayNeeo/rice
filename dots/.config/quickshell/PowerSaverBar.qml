@@ -1,7 +1,6 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
@@ -10,13 +9,20 @@ import "Modules/Bar"
 
 PanelWindow {
     id: barWindow
-    
-    property var screen
+
+    readonly property string bg_: "#0f101b"
+    readonly property string surface: "#1c1e30"
+    readonly property string border: "#2e3048"
+    readonly property string cyan: "#4fd6ff"
+    readonly property string green: "#9ee8b8"
+    readonly property string red: "#ff6b6b"
+    readonly property string textColor: "#dde0f0"
+    readonly property string textMuted: "#6a6e8a"
 
     anchors {
         top: true
         left: true
-        right: true;
+        right: true
     }
 
     exclusiveZone: 28
@@ -24,101 +30,52 @@ PanelWindow {
     aboveWindows: true
     focusable: false
     implicitHeight: 28
-    
-    color: "#0a0b13"
+    color: bg_
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: 4
-        anchors.rightMargin: 4
-        spacing: 3
+        anchors.leftMargin: 10
+        anchors.rightMargin: 10
 
-        Repeater {
-            model: 5
-            Item {
-                required property int index
-                property int wsId: index + 1
-                property bool active: Svc.Workspaces.active === wsId
-                width: active ? 20 : 16
-                height: 20
-                
-                Text {
-                    anchors.centerIn: parent
-                    text: wsId.toString()
-                    font.pixelSize: 8
-                    font.family: "JetBrainsMonoNL Nerd Font"
-                    color: parent.active ? "#4fd6ff" : "#5a5e7a"
-                }
-                
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: Svc.Workspaces.switchTo(wsId)
-                }
-            }
-        }
+        Workspaces { Layout.alignment: Qt.AlignVCenter }
 
-        Item {
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-            height: 20
-            
-            Text {
-                anchors.centerIn: parent
-                text: Svc.Clock.time
-                font.pixelSize: 10
-                font.family: "JetBrainsMonoNL Nerd Font"
-                color: "#4fd6ff"
-            }
-            
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                onClicked: mouse => {
-                    if (mouse.button === Qt.RightButton) {
-                        shellRoot.togglePanel()
-                    }
-                }
-            }
-        }
+        Item { Layout.fillWidth: true; Layout.fillHeight: true }
+
+        Clock { Layout.alignment: Qt.AlignVCenter }
+
+        Item { Layout.fillWidth: true; Layout.fillHeight: true }
 
         RowLayout {
-            spacing: 3
-            height: 20
-            Layout.alignment: Qt.AlignRight
-            
+            Layout.alignment: Qt.AlignVCenter
+            spacing: 8
+
             Text {
                 visible: Svc.Battery.present
-                text: {
-                    if (Svc.Battery.charging) return "󰂄 " + Svc.Battery.level + "%"
-                    if (Svc.Battery.critical) return "󰁚 " + Svc.Battery.level + "%"
-                    return "󰁹 " + Svc.Battery.level + "%"
-                }
-                font.pixelSize: 8
-                font.family: "JetBrainsMonoNL Nerd Font"
-                color: {
-                    if (Svc.Battery.critical) return "#ff6b6b"
-                    if (Svc.Battery.warning) return "#ffcc66"
-                    return "#9ee8b8"
-                }
-            }
-            
-            Text {
-                text: {
-                    if (Svc.PowerProfile.full === "performance") return "P"
-                    if (Svc.PowerProfile.full === "power-saver") return "S"
-                    return "B"
-                }
-                font.pixelSize: 8
+                text: (Svc.Battery.charging ? "+" : "B") + " " + Svc.Battery.level + "%"
+                font.pixelSize: 9
                 font.weight: Font.Bold
                 font.family: "JetBrainsMonoNL Nerd Font"
-                color: {
-                    if (Svc.PowerProfile.full === "performance") return "#ff6b6b"
-                    if (Svc.PowerProfile.full === "power-saver") return "#9ee8b8"
-                    return "#4fd6ff"
+                color: Svc.Battery.charging ? green : (Svc.Battery.level <= 15 ? red : green)
+            }
+
+            Rectangle {
+                implicitWidth: profileText.implicitWidth + 14
+                height: 24
+                radius: 8
+                color: surface
+                border.width: 1
+                border.color: border
+
+                Text {
+                    id: profileText
+                    anchors.centerIn: parent
+                    text: Svc.PowerProfile.text
+                    font.pixelSize: 9
+                    font.weight: Font.Bold
+                    font.family: "JetBrainsMonoNL Nerd Font"
+                    color: Svc.PowerProfile.full === "power-saver" ? green : (Svc.PowerProfile.full === "performance" ? red : cyan)
                 }
-                
+
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor

@@ -1,0 +1,21 @@
+#!/bin/bash
+set -euo pipefail
+
+echo "=== Testing Quickshell suspend/resume fix ==="
+echo ""
+echo "Pre-suspension checks:"
+echo "  - Quickshell is running: $(pgrep -x quickshell >/dev/null 2>&1 && echo '✓' || echo '✗')"
+echo "  - Systemd service enabled: $(systemctl --user is-enabled quickshell.service 2>/dev/null && echo '✓' || echo '✗')"
+echo "  - Screenshot keybind active: $(grep -q "bind = Super SHIFT, S" ~/.config/hypr/keybinds.conf && echo '✓' || echo '✗')"
+echo ""
+echo "To test suspend/resume:"
+echo "  1. Press Super+Shift+S to take a screenshot region (should work)"
+echo "  2. Press Super+Backspace to suspend system"
+echo "  3. Wake up the system (press any key or move mouse)"
+echo "  4. Check if Quickshell is still running"
+echo "  5. Press Super+Shift+S again (should still work)"
+echo ""
+echo "If Quickshell disappears after suspend:"
+echo "  - Check systemd logs: journalctl --user -u quickshell.service -n 20"
+echo "  - Check resume hook: systemctl --user status quickshell-resume.service"
+echo "  - Manual restart: systemctl --user restart quickshell.service"

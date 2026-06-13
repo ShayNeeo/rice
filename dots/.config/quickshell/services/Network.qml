@@ -10,6 +10,7 @@ Singleton {
 
     property bool connected: false
     property string label: ""
+    property int signal: 0
 
     function openManager() {
         openProc.command = ["nm-connection-editor"]
@@ -31,7 +32,7 @@ Singleton {
 
     Process {
         id: getStatus
-        command: ["sh", "-c",
+        command: ["bash", "-c",
             "nmcli -t -f STATE d 2>/dev/null | head -1"
         ]
         stdout: StdioCollector {
@@ -43,6 +44,7 @@ Singleton {
                 } else {
                     root.connected = false
                     root.label = ""
+                    root.signal = 0
                 }
             }
         }
@@ -50,16 +52,23 @@ Singleton {
 
     Process {
         id: getWifi
-        command: ["sh", "-c",
-            "nmcli -t -f ACTIVE,SSID d wifi 2>/dev/null | grep '^yes:' | cut -d: -f2"
+        command: ["bash", "-c",
+            "nmcli -t -f ACTIVE,SSID,SIGNAL d wifi 2>/dev/null | grep '^yes:'"
         ]
         stdout: StdioCollector {
             onStreamFinished: {
-                const name = text.trim()
-                if (name) {
-                    root.label = name.length > 12 ? name.substring(0, 12) + "…" : name
+                const line = text.trim()
+                if (line) {
+                    const parts = line.split(":")
+                    if (parts.length >= 3) {
+                        const name = parts[1] || ""
+                        root.label = name.length > 12 ? name.substring(0, 12) : name
+                        const sig = parseInt(parts[2]) || 0
+                        root.signal = sig
+                    }
                 } else {
                     root.label = "eth"
+                    root.signal = 0
                 }
             }
         }

@@ -1045,13 +1045,16 @@ mkdir -p "$HOME/.config/hypr/custom"
 if [ ! -f "$HOME/.config/hypr/custom/monitors.conf" ]; then
     cat > "$HOME/.config/hypr/custom/monitors.conf" <<'CUSTOM_EOF'
 # Custom Monitor Configuration
-# Uncomment and modify for your setup
-# Examples:
-#   monitor=DP-1,1920x1080@144,0x0,1
-#   monitor=HDMI-A-1,2560x1440@60,1920x0,1
-#   monitor=eDP-1,preferred,auto,1.5  # Laptop with scaling
 #
-# List your monitors: hyprctl monitors
+# Keep this file empty unless you need explicit per-monitor rules.
+# Hyprland already applies a safe fallback rule in hyprland.conf:
+#   monitor=,preferred,auto,1
+#
+# The old contradictory eDP/HDMI rules caused Hyprland 0.55.3 to crash on
+# monitor hotplug/reload in balanced/performance theme switches.
+#
+# To add a rule later, uncomment and adjust ONE rule:
+#   monitor=MONITOR-NAME,preferred,auto,1
 CUSTOM_EOF
 fi
 
@@ -1234,74 +1237,122 @@ if [ -f "$SCRIPT_DIR/scripts/battery-monitor.sh" ]; then
     echo -e "   ${GREEN}✓${NC} Installed battery-monitor.sh"
 fi
 
-if [ -f "$SCRIPT_DIR/scripts/check_ssh_active.sh" ]; then
-    cp "$SCRIPT_DIR/scripts/check_ssh_active.sh" "$HOME/.local/bin/check_ssh_active.sh"
-    chmod +x "$HOME/.local/bin/check_ssh_active.sh"
-    echo -e "   ${GREEN}✓${NC} Installed check_ssh_active.sh (SSH-aware idle suspend)"
+if [ -f "$SCRIPT_DIR/scripts/check_active_sessions.sh" ]; then
+    cp "$SCRIPT_DIR/scripts/check_active_sessions.sh" "$HOME/.local/bin/check_active_sessions.sh"
+    chmod +x "$HOME/.local/bin/check_active_sessions.sh"
+    echo -e "   ${GREEN}✓${NC} Installed check_active_sessions.sh (SSH + AI agent aware idle suspend)"
 fi
 
 if [ -f "$SCRIPT_DIR/scripts/conditional-suspend.sh" ]; then
     cp "$SCRIPT_DIR/scripts/conditional-suspend.sh" "$HOME/.local/bin/conditional-suspend.sh"
     chmod +x "$HOME/.local/bin/conditional-suspend.sh"
-    echo -e "   ${GREEN}✓${NC} Installed conditional-suspend.sh (idle + SSH check)"
+    echo -e "   ${GREEN}✓${NC} Installed conditional-suspend.sh (idle + SSH + AI agent check)"
 fi
 
-# Conditional suspend timer (polls every 2min to catch SSH drop after 15min idle)
+# User systemd units
+echo "   Installing user systemd units..."
+mkdir -p "$HOME/.config/systemd/user"
+
+# 1. Install all units from repo (quickshell, conditional-suspend, 9router, quickshell-resume)
 if [ -d "$SCRIPT_DIR/systemd/user" ]; then
-    mkdir -p "$HOME/.config/systemd/user"
     for unit in "$SCRIPT_DIR/systemd/user"/*.service "$SCRIPT_DIR/systemd/user"/*.timer; do
         [ -f "$unit" ] && cp "$unit" "$HOME/.config/systemd/user/" && echo -e "   ${GREEN}✓${NC} Installed $(basename "$unit")"
     done
-    systemctl --user daemon-reload 2>/dev/null || true
-    # Enable quickshell auto-start
-    if systemctl --user enable quickshell.service 2>/dev/null; then
-        systemctl --user start quickshell.service 2>/dev/null || true
-        echo -e "   ${GREEN}✓${NC} Enabled quickshell.service (auto-start on login)"
-    fi
-    
-    # Deploy quickshell resume hook (restart after suspend/resume)
-    if [ -f "$SCRIPT_DIR/dots/.config/systemd/user/quickshell-resume.service" ]; then
-        mkdir -p ~/.config/systemd/user
-        cp "$SCRIPT_DIR/dots/.config/systemd/user/quickshell-resume.service" ~/.config/systemd/user/
-        if systemctl --user enable quickshell-resume.service 2>/dev/null; then
-            systemctl --user daemon-reload 2>/dev/null || true
-            echo -e "   ${GREEN}✓${NC} Enabled quickshell-resume.service (auto-restart after suspend)"
-        fi
-    fi
-    
-    if systemctl --user enable conditional-suspend.timer 2>/dev/null; then
-        systemctl --user start conditional-suspend.timer 2>/dev/null || true
-        echo -e "   ${GREEN}✓${NC} Enabled conditional-suspend.timer (polls every 2min)"
-    else
-        echo -e "   ${YELLOW}⚠️${NC}  Enable conditional-suspend.timer manually: systemctl --user enable --now conditional-suspend.timer"
-    fi
 fi
 
-# Polkit: allow suspend without password (for conditional-suspend from user timer)
+# 2. Install quickshell.service.d override drop-in (bounds restart storms)
+if [ -d "$SCRIPT_DIR/dots/.config/systemd/user/quickshell.service.d" ]; then
+    mkdir -p "$HOME/.config/systemd/user/quickshell.service.d"
+    cp -a "$SCRIPT_DIR/dots/.config/systemd/user/quickshell.service.d/." \
+        "$HOME/.config/systemd/user/quickshell.service.d/"
+    echo -e "   ${GREEN}✓${NC} Installed quickshell.service.d/override.conf (start-limit + restart backoff)"
+fi
+
+# 3. Remove the duplicate suspend.target.wants symlink (race condition fix)
+rm -f "$HOME/.config/systemd/user/suspend.target.wants/quickshell-resume.service"
+
+systemctl --user daemon-reload 2>/dev/null || true
+
+# Enable quickshell auto-start
+if systemctl --user enable quickshell.service 2>/dev/null; then
+    systemctl --user start quickshell.service 2>/dev/null || true
+    echo -e "   ${GREEN}✓${NC} Enabled quickshell.service (auto-start on login)"
+fi
+
+# Enable quickshell-resume (single hook via sleep.target only — see override above)
+if systemctl --user enable quickshell-resume.service 2>/dev/null; then
+    systemctl --user daemon-reload 2>/dev/null || true
+    echo -e "   ${GREEN}✓${NC} Enabled quickshell-resume.service (auto-restart after suspend)"
+fi
+
+# Enable 9router WAL checkpoint timer (keeps SQLite from holding 5MB WAL)
+if systemctl --user enable --now 9router-wal-checkpoint.timer 2>/dev/null; then
+    echo -e "   ${GREEN}✓${NC} Enabled 9router-wal-checkpoint.timer (daily WAL checkpoint)"
+fi
+
+# NOTE: conditional-suspend.timer is installed but NOT enabled by default.
+# The 2-minute poll loop is wasteful (ss + loginctl + pgrep every time).
+# hypridle's 15-min timeout already handles idle suspend correctly; the
+# timer is a fallback for the rare case where SSH drops AFTER the 15-min
+# timeout. Enable manually if needed:
+#   systemctl --user enable --now conditional-suspend.timer
+
+# Polkit: allow suspend without password (for hypridle from user)
 if [ -f "$SCRIPT_DIR/etc/polkit-1/rules.d/50-allow-suspend.rules" ]; then
     sudo mkdir -p /etc/polkit-1/rules.d
     sudo cp "$SCRIPT_DIR/etc/polkit-1/rules.d/50-allow-suspend.rules" /etc/polkit-1/rules.d/
     echo -e "   ${GREEN}✓${NC} Installed polkit rule for passwordless suspend (power/wheel)"
 fi
 
+# NOTE: fcitx5-lotus-server is intentionally NOT modified by this installer.
+# The upstream /usr/lib/systemd/system/fcitx5-lotus-server@.service unit
+# already sets CapabilityBoundingSet=CAP_SYS_NICE CAP_SYS_PTRACE, which
+# are required for the /dev/uinput virtual keyboard to inject events.
+# A hardening override that strips these caps causes the "type Vietnamese,
+# nothing appears, press backspace 2x to reveal" regression — DO NOT
+# re-introduce an override for this service.
+
+if [ -f "$SCRIPT_DIR/scripts/install-power-tuning.sh" ]; then
+    echo ""
+    echo "   Optional: passwordless sudo for power tuning (unlocks EPP + boost writes)"
+    read -r -p "   Apply /etc/sudoers.d/pixel-rice-power? [y/N]: " APPLY_SUDOERS
+    if [[ "$APPLY_SUDOERS" =~ ^[Yy]$ ]]; then
+        sudo bash "$SCRIPT_DIR/scripts/install-power-tuning.sh" 2>&1 | tail -3
+    else
+        echo "   Skipped. Run later: sudo $SCRIPT_DIR/scripts/install-power-tuning.sh"
+    fi
+fi
+
 # Dynamic Theme Switching (power-saver vs cartoon-shell based on power profile)
 echo "   Installing dynamic theme switching..."
 if [ -f "$SCRIPT_DIR/scripts/theme-switcher.sh" ]; then
-if [ -f "$SCRIPT_DIR/scripts/screenshot-region" ]; then
-    cp "$SCRIPT_DIR/scripts/screenshot-region" "$HOME/.local/bin/screenshot-region"
-    chmod +x "$HOME/.local/bin/screenshot-region"
-    echo -e "   ${GREEN}✓${NC} Installed screenshot-region (grim+slurp wrapper)"
-if [ -f "$SCRIPT_DIR/scripts/screenshot-region-ensure" ]; then
-    cp "$SCRIPT_DIR/scripts/screenshot-region-ensure" "$HOME/.local/bin/screenshot-region-ensure"
-    chmod +x "$HOME/.local/bin/screenshot-region-ensure"
-    cp "$SCRIPT_DIR/scripts/screenshot-region-ensure.desktop" "$HOME/.config/autostart/screenshot-region-ensure.desktop" 2>/dev/null || true
-    echo -e "   ${GREEN}✓${NC} Installed screenshot-region autostart ensure script"
-fi
-fi
     cp "$SCRIPT_DIR/scripts/theme-switcher.sh" "$HOME/.local/bin/theme-switcher.sh"
     chmod +x "$HOME/.local/bin/theme-switcher.sh"
     echo -e "   ${GREEN}✓${NC} Installed theme-switcher.sh"
 fi
+
+# Screenshot wrapper (grim+slurp)
+if [ -f "$SCRIPT_DIR/scripts/screenshot-region" ]; then
+    cp "$SCRIPT_DIR/scripts/screenshot-region" "$HOME/.local/bin/screenshot-region"
+    chmod +x "$HOME/.local/bin/screenshot-region"
+    echo -e "   ${GREEN}✓${NC} Installed screenshot-region (grim+slurp wrapper)"
+fi
+
+# Note: screenshot-region-ensure and its autostart are intentionally NOT
+# installed. The old script had a broken SCRIPT_DIR variable and did
+# no-op I/O at every login. The screenshot-region wrapper above is all
+# that's needed.
+
+# Power management scripts (tuned for AMD Ryzen / Cezanne)
+echo "   Installing power management scripts..."
+for s in manage_power.sh power-diagnose.sh power-profile-test.sh \
+         install-power-tuning.sh \
+         rotate-cloudflare-secret.sh; do
+    if [ -f "$SCRIPT_DIR/scripts/$s" ]; then
+        install -m 0755 "$SCRIPT_DIR/scripts/$s" "$HOME/.local/bin/$s"
+        echo -e "   ${GREEN}✓${NC} Installed $s"
+    fi
+done
 
 # Install both theme trees to a user-owned cache so theme switching can use
 # atomic symlink swaps instead of repeatedly copying configs.
@@ -1478,9 +1529,15 @@ if [[ "$is_remote_session" -eq 0 ]]; then
     export GTK_THEME=Adwaita:dark
     export GDK_THEME=Adwaita-dark
 
+    # fcitx5 IM env vars — mirror official fcitx5-lotus Hyprland guide.
+    # Required by Firefox, Discord, Krita, fcitx5-configtool, virtualbox,
+    # and Xwayland fallback apps. Set in BOTH hyprland.conf AND here so
+    # they survive SSH logins and non-Hyprland shells (Ghostty in TTY, su,
+    # VS Code remote). Identical values, no double-init.
     export GTK_IM_MODULE=fcitx
     export QT_IM_MODULE=fcitx
     export XMODIFIERS=@im=fcitx
+    export SDL_IM_MODULE=fcitx
     export GLFW_IM_MODULE=ibus
 
     # ble → PS1 → atuin → fzf (fzf last: avoids double prompt on Ghostty / some terminals)
@@ -1507,43 +1564,55 @@ if [[ "$is_remote_session" -eq 1 ]] && command -v fzf >/dev/null 2>&1; then
     eval "$(fzf --bash)"
 fi
 
-# Ghostty sometimes injects a prompt hook that can duplicate prompt lines
-# when combined with ble/atuin/fzf stacks. Keep title/zoxide hooks, drop ghostty hook.
-if [[ "${TERM_PROGRAM:-}" == "ghostty" ]]; then
-    __pixel_strip_ghostty_hook() {
-        local _pc_decl _pc
-        _pc_decl="$(declare -p PROMPT_COMMAND 2>/dev/null || true)"
-        if [[ "$_pc_decl" == "declare -a "* ]]; then
-            local _pc_new=()
-            for _pc in "${PROMPT_COMMAND[@]}"; do
-                [[ "$_pc" == *"__ghostty_hook"* ]] && continue
-                _pc_new+=("$_pc")
-            done
-            PROMPT_COMMAND=("${_pc_new[@]}")
-            unset _pc_new
-        elif [[ "${PROMPT_COMMAND:-}" == *"__ghostty_hook"* ]]; then
-            PROMPT_COMMAND=""
-        fi
-        unset _pc_decl _pc
-    }
+# Ghostty strip-hook removed: Ghostty config sets
+# `shell-integration = none` + `shell-integration-features = no-cursor`
+# (see dots/.config/ghostty/config), so the `__ghostty_hook` is never
+# injected. The per-prompt declare-p + array copy ran for nothing.
 
-    # Remove once immediately...
-    __pixel_strip_ghostty_hook
-    # ...and keep stripping on every prompt in case Ghostty re-injects it.
-    if [[ "$(declare -p PROMPT_COMMAND 2>/dev/null || true)" == "declare -a "* ]]; then
-        PROMPT_COMMAND+=("__pixel_strip_ghostty_hook")
-    elif [[ -n "${PROMPT_COMMAND:-}" ]]; then
-        PROMPT_COMMAND="${PROMPT_COMMAND};__pixel_strip_ghostty_hook"
-    else
-        PROMPT_COMMAND="__pixel_strip_ghostty_hook"
-    fi
+# --- NVM (Node Version Manager) ---
+# Must be loaded FIRST so 'node' binary is available in PATH for pnpm and other tools
+if [[ -f /usr/share/nvm/init-nvm.sh ]]; then
+    source /usr/share/nvm/init-nvm.sh
 fi
+
+# --- PNPM ---
+# Must be loaded AFTER NVM so it can link its binaries to the active node instance
+export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+case ":$PATH:" in
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
+esac
+
+# --- Secrets (Cloudflare tokens, etc.) ---
+# Loaded LAST so other PIXEL-RICE exports are visible. File is created
+# with mode 600 by rotate-cloudflare-secret.sh. Keep secrets out of
+# .bashrc itself to avoid leaking via /proc/$PID/environ.
+[[ -f "$HOME/.config/secrets/cloudflare.env" ]] && \
+    . "$HOME/.config/secrets/cloudflare.env"
 
 # --- PIXEL-RICE END ---
 EOF
     echo -e "   ${GREEN}✓${NC} Updated .bashrc"
 else
     echo -e "   ${YELLOW}⚠️${NC}  .bashrc already configured with PIXEL-RICE block, leaving it unchanged."
+fi
+
+# Create secrets dir (with 700 perms) and stub cloudflare.env (mode 600)
+# rotate-cloudflare-secret.sh will write the real value later.
+SECRETS_DIR="$HOME/.config/secrets"
+mkdir -p "$SECRETS_DIR"
+chmod 700 "$SECRETS_DIR"
+if [ ! -f "$SECRETS_DIR/cloudflare.env" ]; then
+    cat > "$SECRETS_DIR/cloudflare.env" <<'CLOUDFLARE_EOF'
+# Cloudflare API credentials
+# Set/rotate at: https://dash.cloudflare.com/profile/api-tokens
+# File permissions: 600 (owner read/write only)
+# Run ~/.local/bin/rotate-cloudflare-secret.sh to set the real value.
+export CLOUDFLARE_API_TOKEN="REPLACE_ME"
+export CLOUDFLARE_ACCOUNT_ID="REPLACE_ME"
+CLOUDFLARE_EOF
+    chmod 600 "$SECRETS_DIR/cloudflare.env"
+    echo -e "   ${GREEN}✓${NC} Created $SECRETS_DIR/cloudflare.env (mode 600) — run rotate-cloudflare-secret.sh to set value"
 fi
 
 # Configure fcitx5
@@ -1661,7 +1730,28 @@ echo -e "${BLUE}Next Steps:${NC}"
 echo "  1. ${YELLOW}Reboot your system${NC} (recommended)"
 echo "  2. After reboot, select ${YELLOW}Hyprland${NC} in your display manager"
 echo "  3. Or start Hyprland manually with: ${YELLOW}Hyprland${NC}"
+echo "  4. ${YELLOW}Rotate the Cloudflare API token${NC}:  ~/.local/bin/rotate-cloudflare-secret.sh"
 echo ""
+
+# Post-install health check
+echo -e "${BLUE}Post-install health check:${NC}"
+if [ -x "$HOME/.local/bin/power-diagnose.sh" ]; then
+    if command -v powerprofilesctl >/dev/null 2>&1; then
+        echo "   Running power-diagnose.sh (current profile: $(powerprofilesctl get))..."
+        "$HOME/.local/bin/power-diagnose.sh" 2>&1 | grep -E "Verdict|k10temp|acpitz|TDP" | head -8 | sed 's/^/   /'
+    fi
+fi
+if systemctl is-active "fcitx5-lotus-server@$(whoami).service" >/dev/null 2>&1; then
+    echo -e "   fcitx5-lotus: ${GREEN}ACTIVE${NC}"
+else
+    echo -e "   fcitx5-lotus: ${YELLOW}INACTIVE${NC} â try: systemctl start fcitx5-lotus-server@\$(whoami).service"
+fi
+if [ -f "$HOME/.config/secrets/cloudflare.env" ] && grep -q "REPLACE_ME" "$HOME/.config/secrets/cloudflare.env"; then
+    echo -e "   cloudflare.env: ${YELLOW}NEEDS ROTATION${NC} â run ~/.local/bin/rotate-cloudflare-secret.sh"
+fi
+echo ""
+echo ""
+
 echo -e "${BLUE}Quick Tips:${NC}"
 echo "  • Super + T       → Open Terminal (Ghostty)"
 echo "  • Super + W       → Open Browser"

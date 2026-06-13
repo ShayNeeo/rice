@@ -57,7 +57,7 @@ function icon_for(action) {
     if (action ~ /[Ee]ditor|[Nn]otepad|[Cc]ursor/) return ""
     if (action ~ /[Cc]alculat/) return ""
     if (action ~ /[Cc]olor [Pp]ick|[Pp]icker/) return ""
-    if (action ~ /[Aa]pp [Ll]auncher|[Ll]auncher|[Ww]ofi|[Rr]ofi/) return ""
+    if (action ~ /[Aa]pp [Ll]auncher|[Ll]auncher|[Ff]uzzel|[Ff]uzzel/) return ""
     if (action ~ /[Cc]heatsheet|[Hh]elp/) return ""
     if (action ~ /[Cc]lipboard/) return ""
     if (action ~ /[Cc]lose|[Qq]uit active/) return ""
@@ -115,7 +115,7 @@ function map_exec(cmd) {
     if (cmd ~ /hyprlock|loginctl lock-session/) return "Lock session"
     if (cmd ~ /systemctl suspend/) return "Sleep (suspend)"
     if (cmd ~ /hyprctl reload/) return "Reload Hyprland config"
-    if (cmd ~ /cliphist.*wofi.*wl-copy/) return "Clipboard history"
+    if (cmd ~ /cliphist.*[Ff]uzzel.*wl-copy/) return "Clipboard history"
     if (cmd ~ /grim -g.*slurp/) return "Screenshot — select region"
     if (cmd ~ /grim[[:space:]]+\|[[:space:]]*wl-copy/) return "Screenshot — full display"
     if (cmd ~ /eyeprotect\.sh/) return "Eye protection toggle"
@@ -248,32 +248,17 @@ fi
 
 MENU_TEXT=$(printf '%s\n' "${LINES[@]}")
 
-CHEATSHEET_ROFI_THEME="${HOME}/.config/rofi/cheatsheet-menu.rasi"
-
-pick_rofi() {
-    if [[ -f "$CHEATSHEET_ROFI_THEME" ]]; then
-        printf '%s\n' "$MENU_TEXT" | rofi -dmenu -i -p "Keybinds" -theme "$CHEATSHEET_ROFI_THEME"
-    else
-        printf '%s\n' "$MENU_TEXT" | rofi -dmenu -i -p "Keybinds" \
-            -theme-str "* { font: \"JetBrainsMono Nerd Font 12\"; } window { width: 840px; height: 60%; background-color: #151621; border: 2px; border-color: #2a2c3c; } listview { background-color: #151621; } element { background-color: #1e2030; text-color: #e0e2f0; } element selected { background-color: #26283a; border-color: #4fd6ff; text-color: #4fd6ff; }"
-    fi
+pick_fuzzel() {
+    printf '%s\n' "$MENU_TEXT" | fuzzel --dmenu -p "Keybinds > " -w 80 -l 30 \
+        --font "JetBrainsMonoNL Nerd Font:size=11" \
+        --background-color "0f101bee" --text-color "dde0f0ff" \
+        --match-color "4fd6ffff" --selection-color "1c1e30ff" \
+        --border-color "4fd6ff44" --border-width 2 \
+        --dpi-aware auto 2>/dev/null
 }
 
-pick_wofi() {
-    if [[ -f "${HOME}/.config/wofi/style.css" ]]; then
-        printf '%s\n' "$MENU_TEXT" | wofi --dmenu -i \
-            -p "Keybinds" \
-            --width 840 --height 500 \
-            --style "${HOME}/.config/wofi/style.css" 2>/dev/null
-        return
-    fi
-    printf '%s\n' "$MENU_TEXT" | wofi --dmenu -i -p "Keybinds" --width 840
-}
-
-if command -v rofi &>/dev/null; then
-    pick_rofi
-elif command -v wofi &>/dev/null; then
-    pick_wofi
+if command -v fuzzel &>/dev/null; then
+    pick_fuzzel
 elif command -v fzf &>/dev/null; then
     printf '%s\n' "$MENU_TEXT" | fzf --prompt "Keybinds > " --height 70% || true
 fi

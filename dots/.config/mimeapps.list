@@ -1,0 +1,16 @@
+[Default Applications]
+text/plain=NotepadNext.desktop
+application/json=NotepadNext.desktop
+text/csv=NotepadNext.desktop
+text/xml=NotepadNext.desktop
+text/yaml=NotepadNext.desktop
+text/html=floorp.desktop
+x-scheme-handler/http=floorp.desktop
+x-scheme-handler/https=floorp.desktop
+x-scheme-handler/ftp=floorp.desktop
+x-scheme-handler/chrome=floorp.desktop
+application/pdf=floorp.desktop
+application/zip=org.gnome.FileRoller.desktop
+application/msword=libreoffice-writer.desktop
+application/vnd.openxmlformats-officedocument.wordprocessingml.document=libreoffice-writer.desktop
+inode/directory=org.kde.dolphin.desktop

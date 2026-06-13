@@ -111,8 +111,21 @@ case "$TYPE" in
             -i "$ICON" \
             "Power Profile" "$TEXT"
 
-        # Switch UI theme to match power profile
-        "$HOME/.local/bin/theme-switcher.sh" &
+        # Apply hardware TDP tuning (ryzenadj, GPU, PCIe, etc.)
+        # Run SYNCHRONOUSLY (not backgrounded) so the OSD notification
+        # and the actual state change are observed together. Backgrounding
+        # both causes a race where rapid Super+Shift+P presses can spawn
+        # two theme-switchers and kill each other's quickshell.
+        MANAGE_POWER="$HOME/.local/bin/manage_power.sh"
+        if [ -x "$MANAGE_POWER" ]; then
+            "$MANAGE_POWER" "$ACTION"
+        fi
+
+        # Switch UI theme to match power profile (synchronous for same
+        # reason — see above)
+        if [ -x "$HOME/.local/bin/theme-switcher.sh" ]; then
+            "$HOME/.local/bin/theme-switcher.sh" "$ACTION"
+        fi
         ;;
         
     "wlsunset")

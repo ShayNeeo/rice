@@ -32,3 +32,7 @@ src/
 pkg/
 *.pkg.tar*
 .agents
+.qwen
+.claude
+.commandcode
+.codex

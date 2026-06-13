@@ -8,6 +8,19 @@ import Quickshell.Services.Notifications as NS
 Singleton {
     id: root
 
+    // --- Notification Server (makes quickshell the D-Bus notification daemon) ---
+    NS.NotificationServer {
+        id: notifServer
+        keepOnReload: true
+        bodySupported: true
+        imageSupported: true
+        actionsSupported: true
+        onNotification: function(notification) {
+            notification.tracked = true
+            root.addNotification(notification)
+        }
+    }
+
     property int count: 0
     property bool dnd: false
     property bool hasNotifs: count > 0 && !dnd

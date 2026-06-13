@@ -1,5 +1,4 @@
 module quickshell.Modules.Bar
-Bar 1.0 Bar.qml
 Clock 1.0 Clock.qml
 Workspaces 1.0 Workspaces.qml
 StatusPills 1.0 StatusPills.qml
