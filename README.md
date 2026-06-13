@@ -1,160 +1,369 @@
 # Pixel Rice
 
-A pixel-perfect, vibrant rice for Arch Linux with Hyprland. Optimized for clean minimal Arch installations with zero compromises on aesthetics and functionality.
+Pixel Rice is an Arch Linux desktop configuration built around Hyprland, Quickshell, and a performance-conscious workflow. It provides a complete Wayland desktop for laptops: compositor configuration, panel and launcher utilities, input-method setup, power management, suspend/resume handling, and theme switching.
 
-## 🎮 Features
+Repository: <https://github.com/ShayNeeo/rice>
 
-- **Hyprland** – Modern Wayland compositor
-- **Ghostty** – Fast terminal
-- **Waybar** – Status bar
-- **Wofi** – Application launcher
-- **Ocean Sorbet** – Blue–orange accent palette; zero rounding, zero blur
-- **Power profiles** – Keybinds via `powerprofilesctl` (works on all laptops)
-- **Auto hardware detection** – Ideapad 500-15ISK (Intel + AMD), ThinkBook 14p (Ryzen), and generic
-- **System integration** – Bluetooth, Pipewire, NetworkManager, fcitx5 (Vietnamese input), SDDM theme
+## Scope
 
-## 📋 Prerequisites
+Pixel Rice is intended for:
 
-- **Arch Linux** (or Arch-based) with a non-root user and sudo
-- Internet connection
-- Basic terminal usage
+- Fresh or minimal Arch Linux installs
+- Laptop-first Hyprland desktops
+- Users who want a working Wayland setup with sane defaults
+- AMD Ryzen / integrated Radeon laptops that benefit from explicit power tuning
+- Multi-monitor setups that need predictable panel placement
 
-## 🚀 Installation
+This is not a universal desktop theme. It is a complete local desktop stack with hardware-aware installer logic.
+
+## Current Architecture
+
+```text
+.
+├── install.sh                         # Full installer and configs-only sync
+├── INSTALL_GUIDE.md                   # Minimal Arch installation guide
+├── CONTEXT.md                         # Design notes and troubleshooting history
+├── AGENTS.md                          # Local agent workflow rules
+├── dots/                              # cartoon-shell theme tree
+├── dots-power-saver/                  # power-saver theme tree
+├── scripts/                           # User utilities and power tooling
+├── systemd/                           # System and user systemd units
+├── etc/                               # Polkit and sudoers drop-ins
+└── sddm-theme/                        # SDDM login theme
+```
+
+## What is included
+
+### Desktop and shell
+
+- Hyprland Wayland compositor
+- Quickshell Qt/QML panels and widgets
+- Fuzzel application launcher
+- Hyprpaper, Hyprlock, Hypridle
+- wlogout power menu
+- wl-clipboard, cliphist, grim, slurp, swappy, wl-screenrec
+- fcitx5-lotus for Vietnamese input
+
+### Applications
+
+Default applications are configured in `dots/.config/hypr/hyprland.conf`:
+
+| Role | Default |
+|------|---------|
+| Terminal | Ghostty |
+| Browser | Floorp |
+| File manager | Dolphin |
+| Text editor | NotepadNext |
+| IDE | Zed |
+| Launcher | Fuzzel |
+
+The installer can optionally install Zen Browser or Thorium, but the default Hyprland variables point to Floorp.
+
+### Power management
+
+Pixel Rice includes several layers of power control:
+
+- `powerprofilesctl` profile switching
+- Dynamic theme switching based on the active power profile
+- `manage_power.sh` for AMD Ryzen tuning
+- `power-diagnose.sh` for profile verification
+- `power-profile-test.sh` for low-power / balanced / performance comparison
+- Optional sudoers drop-in for kernel sysfs power writes
+- Polkit rule for passwordless suspend from user session
+- `hypridle` idle lock and conditional suspend
+- SSH/AI-session-aware suspend guard
+
+The Ryzen path uses native `amd-pstate` EPP controls first, then `ryzenadj` when available. The installer detects Lenovo ThinkBook 14p Gen 2 / Ryzen Cezanne hardware and applies the corresponding profile.
+
+### Theme system
+
+Pixel Rice uses two theme trees:
+
+| Theme | Purpose |
+|-------|---------|
+| `cartoon-shell` | Balanced / performance desktop with full Quickshell UI |
+| `power-saver` | Minimal, low-effect profile for battery saving |
+
+Theme files are installed into:
+
+```text
+~/.local/share/pixel-rice/themes/
+```
+
+The active config is switched with atomic symlink swaps by `theme-switcher.sh`. This avoids copying the full config tree on every profile change.
+
+### Suspend and resume
+
+The project includes explicit suspend/resume hardening:
+
+- `quickshell.service` is enabled as a user service
+- `quickshell-resume.service` restarts Quickshell after suspend via `sleep.target`
+- The duplicate `suspend.target.wants` quickshell restart hook is removed by the installer
+- `9router-wal-checkpoint.timer` keeps the local SQLite database from accumulating a large WAL file
+- `conditional-suspend.timer` is installed but not enabled by default; `hypridle` handles normal idle suspend
+
+## Installation
+
+### Prerequisites
+
+- Arch Linux or an Arch-based system
+- A non-root user with `sudo`
+- Network access
+- `base-devel` and `git`
 
 ### Quick install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/pixel-rice.git
-cd pixel-rice
+git clone https://github.com/ShayNeeo/rice.git
+cd rice
 chmod +x install.sh
 ./install.sh
 ```
 
-Replace `YOUR_USERNAME` with your GitHub username (or your fork URL).
-
-The installer will:
-1. Run pre-flight checks and update the system
-2. Install base deps and set up yay (AUR) if needed
-3. Remove conflicting packages (dunst, mako, sway, i3, dwm)
-4. Install rice packages (Hyprland, Waybar, Ghostty, Wofi, etc.)
-5. Auto-detect GPU/laptop (Intel+AMD hybrid, AMD Ryzen, NVIDIA, Intel-only) and install matching tools
-6. Enable services (NetworkManager, Bluetooth, power-profiles-daemon, SDDM)
-7. Deploy dotfiles and create `~/.config/hypr/custom/` (preserved on re-runs)
-8. Back up existing configs to `~/.config_backup_TIMESTAMP`
-
-**Time:** about 15–30 minutes.
-
-### After install
+The installer supports two modes:
 
 ```bash
-# Reboot (recommended)
-reboot
+./install.sh                 # Full install: packages + configs
+./install.sh --configs-only  # Sync configs and apply current theme only
 ```
 
-Then choose **Hyprland** at the login screen, or run `Hyprland` from a TTY.
+During a full install, the installer:
 
-See **[INSTALL_GUIDE.md](INSTALL_GUIDE.md)** for minimal Arch from scratch, troubleshooting, and variants.
+1. Runs Arch pre-flight checks
+2. Updates the system and keyring
+3. Installs `base-devel`, `git`, and an AUR helper if needed
+4. Installs Hyprland, Wayland, Quickshell, input, audio, Bluetooth, network, GTK, Qt, and developer packages
+5. Installs Floorp by default, with optional Zen / Thorium prompts
+6. Configures fcitx5-lotus and required Wayland input permissions
+7. Preserves `~/.config/hypr/custom/` on re-runs
+8. Installs user scripts and systemd units
+9. Installs the SDDM theme
+10. Installs both theme trees and applies the theme matching the current power profile
 
-## ⌨️ Keybindings
+See [INSTALL_GUIDE.md](INSTALL_GUIDE.md) for a clean minimal Arch walkthrough.
 
-### Core
+## Configuration layout
 
-| Keybind | Action |
-|---------|--------|
-| `Super + T` | Terminal (Ghostty) |
-| `Super + W` | Browser (Zen Browser) |
-| `Super + Space` | App launcher (Wofi) |
-| `Super + /` | Keybind cheatsheet |
-| `Super + Q` | Close window |
-| `Super + M` | Exit Hyprland |
+### Hyprland
 
-### Power (powerprofilesctl; all laptops)
+Main files:
 
-| Keybind | Action |
-|---------|--------|
-| `Super + Shift + P` | Performance |
-| `Super + Ctrl + P` | Balanced |
-| `Super + Alt + P` | Power Saver |
+- `dots/.config/hypr/hyprland.conf`
+- `dots/.config/hypr/keybinds.conf`
+- `dots/.config/hypr/hypridle.conf`
+- `dots/.config/hypr/hyprlock.conf`
+- `dots-power-saver/.config/hypr/*`
 
-### Connectivity & system
+User overrides are preserved in:
 
-| Keybind | Action |
-|---------|--------|
-| `Super + B` | Bluetooth (Blueman) |
-| `Super + Shift + B` | Bluetooth TUI (bluetoothctl) |
-| `Super + N` | Network (nmtui) |
-| `Super + Shift + N` | Network GUI (nm-connection-editor) |
-| `Super + I` | btop |
+```text
+~/.config/hypr/custom/
+```
 
-### Window & workspace
-
-| Keybind | Action |
-|---------|--------|
-| `Super + 1-9, 0` | Switch workspace |
-| `Super + Shift + 1-9, 0` | Move window to workspace |
-| `Super + P` | Pseudo (split) |
-| `Super + J` | Toggle split |
-| `Super + V` | Toggle floating |
-| `Super + grave` | Scratchpad |
-
-### Media & laptop
-
-| Keybind | Action |
-|---------|--------|
-| `Super + Shift + S` | Screenshot region → clipboard |
-| `Super + Print` | Full screenshot |
-| `Super + Alt + R` | Screen record |
-| `Super + Y` | Eye protection (wlsunset) |
-| `Super + L` | Lock |
-| `Super + Shift + Backspace` | Suspend |
-
-Press **`Super + /`** in-session for the full cheatsheet.
-
-## 🎨 Customization
-
-**User configs (not overwritten by installer):** `~/.config/hypr/custom/`
+Recommended custom files:
 
 | File | Purpose |
-|------|--------|
+|------|---------|
 | `monitors.conf` | Monitor layout, resolution, scale |
 | `keybinds.conf` | Extra keybinds |
-| `autostart.conf` | Programs to start with Hyprland |
-| `env.conf` | Environment variables |
+| `autostart.conf` | User programs started with Hyprland |
+| `env.conf` | User environment variables |
 
-Edit main colors in:
-- Hyprland: `dots/.config/hypr/hyprland.conf`
-- Waybar: `dots/.config/waybar/style.css`
-- Wofi: `dots/.config/wofi/style.css`
+Do not edit generated user overrides directly from the repo. Put persistent changes in `~/.config/hypr/custom/`.
 
-Default apps (in `hyprland.conf`): `$terminal = ghostty`, `$browser = zen-browser`, `$menu = wofi --show drun`.
+### Quickshell
 
-## 🖥️ Hardware support
+Quickshell is the primary panel and widget layer. It replaces the older Waybar/Rofi/swaync stack.
 
-- **Lenovo Ideapad 500-15ISK** (Intel i7-6500U + AMD Radeon R7 M360/M370): iGPU primary; use `DRI_PRIME=1 <app>` to run selected apps on AMD. No ryzenadj (Intel CPU).
-- **Lenovo ThinkBook 14p Gen 2** (AMD Ryzen, no dGPU): amdgpu_top + ryzenadj; power profile keybinds + Ryzen TDP service.
-- **Generic:** Intel-only, NVIDIA, or other: appropriate GPU tools and powerprofilesctl keybinds only.
+Important files:
 
-## 🔧 Troubleshooting
+```text
+dots/.config/quickshell/shell.qml
+dots/.config/quickshell/Bar.qml
+dots/.config/quickshell/Modules/
+dots/.config/quickshell/services/
+```
 
-- **Hyprland won’t start:** `cat ~/.hyprland.log`. Install drivers: Intel `mesa vulkan-intel`, AMD `mesa vulkan-radeon`, NVIDIA `nvidia-dkms nvidia-utils`.
-- **Waybar missing:** `killall waybar && waybar &`
-- **Ghostty / Zen Browser:** Install from AUR: `yay -S ghostty zen-browser-bin` (installer falls back to Firefox if zen-browser fails).
+Architecture notes:
 
-More in **[INSTALL_GUIDE.md](INSTALL_GUIDE.md)**.
+- Do not use `Repeater { model: Quickshell.screens }` for `PanelWindow` components.
+- Multi-monitor panels are manually instantiated in `shell.qml`.
+- Use `implicitWidth` / `implicitHeight` inside layouts.
+- Animate layout items with `transform: Translate {}`, not `x` / `y` offsets.
+- Keep `pragma Singleton` on service files.
 
-## 📦 What’s included
+See [CONTEXT.md](CONTEXT.md) for detailed design notes.
 
-Core: Hyprland, Waybar, Ghostty, Wofi, Rofi, wlogout. System: NetworkManager, Blueman, Pipewire, power-profiles-daemon, fcitx5 (Vietnamese), SDDM theme. Scripts: cheatsheet, osd (volume/brightness/power), eyeprotect, screenrecord, battery-monitor, smart-suspend. See `install.sh` for the full list.
+## Keybindings
 
-## 🤝 Credits
+Main keybindings are defined in `dots/.config/hypr/hyprland.conf`.
 
-- [Cartoon Shell](https://github.com/mailong2401/cartoon-shell) (mailong2401) – pixel-art inspiration
-- [dots-hyprland](https://github.com/end-4/dots-hyprland) (end-4) – Hyprland layout and patterns
+| Shortcut | Action |
+|----------|--------|
+| `Super + Return` | Open terminal |
+| `Super + T` | Open terminal |
+| `Super + W` | Open browser |
+| `Super + F` | Open file manager |
+| `Super + E` | Open text editor |
+| `Super + O` | Open IDE |
+| `Super + Space` | Open launcher |
+| `Super + /` | Open cheatsheet |
+| `Super + Shift + V` | Clipboard history |
+| `Super + Q` | Close active window |
+| `Super + Shift + F` | Toggle fullscreen |
+| `Super + V` | Toggle floating |
+| `Super + P` | Pseudo tile |
+| `Super + H/J/K/L` | Focus windows |
+| `Super + 1-9` | Switch workspace |
+| `Super + Shift + 1-9` | Move window to workspace |
+| `Super + Shift + P` | Performance profile |
+| `Super + Ctrl + P` | Balanced profile |
+| `Super + Alt + P` | Power-saver profile |
+| `Super + Shift + W` | WARP / NextDNS toggle |
+| `Super + Alt + R` | Screen record |
+| `Super + Backspace` | Lock session |
+| `Super + Shift + Backspace` | Suspend |
+| `Super + Shift + M` | Reload Hyprland |
 
-## 📄 License
+## Hardware profiles
 
-GPLv3 – see [LICENSE](LICENSE).
+### Lenovo Ideapad 500-15ISK
 
-## 💬 Support
+- Intel i7 + AMD Radeon R7 M360/M370 hybrid graphics
+- Uses Intel iGPU as primary display
+- Uses `DRI_PRIME=1 <app>` when selecting the AMD dGPU
+- Does not use `ryzenadj`
 
-Open an issue for bugs or suggestions. Enjoy your Pixel Rice! 🎮✨
+### Lenovo ThinkBook 14p Gen 2
+
+- AMD Ryzen APU / Radeon Cezanne
+- Uses `amdgpu_top`, `ryzenadj`, and explicit power tuning
+- Supports profile-specific CPU/GPU power limits
+- Uses kernel `amd-pstate` EPP controls plus optional sudoers drop-in
+
+### Generic
+
+- Detects GPU with `lspci`
+- Installs appropriate Mesa / AMD / NVIDIA tools
+- Uses `powerprofilesctl` keybinds
+- Full Ryzen tuning is enabled only when the hardware and sudoers drop-in support it
+
+## Maintenance
+
+Deploy config-only changes after editing the repo:
+
+```bash
+./install.sh --configs-only
+```
+
+Reload Hyprland:
+
+```bash
+hyprctl reload
+```
+
+Restart Quickshell:
+
+```bash
+systemctl --user restart quickshell.service
+```
+
+Check suspend/resume units:
+
+```bash
+systemctl --user status quickshell.service
+systemctl --user status quickshell-resume.service
+```
+
+Check power profile behavior:
+
+```bash
+power-diagnose.sh
+power-profile-test.sh
+```
+
+Optional full power tuning setup:
+
+```bash
+sudo scripts/install-power-tuning.sh
+```
+
+## Troubleshooting
+
+### Hyprland will not start
+
+```bash
+cat ~/.hyprland.log
+```
+
+Install the correct GPU drivers:
+
+```bash
+sudo pacman -S --needed mesa
+sudo pacman -S --needed vulkan-intel       # Intel
+sudo pacman -S --needed vulkan-radeon      # AMD
+sudo pacman -S --needed nvidia-dkms nvidia-utils  # NVIDIA
+```
+
+### Quickshell disappears after suspend
+
+```bash
+systemctl --user status quickshell.service
+systemctl --user status quickshell-resume.service
+systemctl --user restart quickshell.service
+```
+
+### Power tuning does not apply
+
+Run diagnostics:
+
+```bash
+power-diagnose.sh
+```
+
+If EPP or sysfs writes are denied, install the optional sudoers drop-in:
+
+```bash
+sudo scripts/install-power-tuning.sh
+```
+
+### Vietnamese input does not work in some apps
+
+Confirm fcitx5 and Lotus are running:
+
+```bash
+fcitx5-remote
+systemctl --user status fcitx5-lotus-server@$(whoami).service
+```
+
+The Hyprland config sets the required GTK/Qt/X11/Wayland input variables and grants the Lotus server keyboard permission.
+
+### Monitor layout issues
+
+Use the preserved custom file:
+
+```bash
+~/.config/hypr/custom/monitors.conf
+```
+
+Example:
+
+```conf
+monitor=HDMI-A-1,2560x1440@60,0x0,1
+monitor=eDP-1,disable
+```
+
+## Security and privacy
+
+Do not commit local secrets, personal notes, or generated private files. The repository ignores common local files such as `.env`, `.env.local`, IDE folders, caches, and local agent settings.
+
+The project includes `scripts/rotate-cloudflare-secret.sh` for local credential rotation. It should be treated as a local utility and should not contain live credentials.
+
+## Credits
+
+- [Cartoon Shell](https://github.com/mailong2401/cartoon-shell) by mailong2401
+- [dots-hyprland](https://github.com/end-4/dots-hyprland) by end-4
+
+## License
+
+GPLv3 — see [LICENSE](LICENSE).
